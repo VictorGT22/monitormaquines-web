@@ -121,6 +121,10 @@
       </div>
 
       <div id="projectes-view" class="hidden">
+        <div class="subtabs" id="filtre-projectes-estat">
+          <button type="button" class="nav-tab actiu" data-estat="actius">Activats</button>
+          <button type="button" class="nav-tab" data-estat="no-actius">No activats</button>
+        </div>
         <div class="filtres-historic">
           <div style="flex:1;min-width:160px;">
             <label>Cercar</label>
@@ -677,11 +681,23 @@
     function banderaUrl_(idioma) { return BANDERES[idioma] || BANDERES.ca; }
 
     let projectesJaAnimat_ = false;
+    let filtreProjectesEstat_ = 'actius';
+
+    document.getElementById('filtre-projectes-estat').addEventListener('click', function (e) {
+      const btn = e.target.closest('.nav-tab');
+      if (!btn) return;
+      filtreProjectesEstat_ = btn.dataset.estat;
+      this.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('actiu', b === btn));
+      projectesJaAnimat_ = false;
+      pintarProjectesTaula_();
+    });
 
     function pintarProjectesTaula_() {
       const q = (document.getElementById('filtre-projectes-text').value || '').trim().toLowerCase();
-      const files = projectesErpCache_.filter(p =>
-        !q || p.descripcio.toLowerCase().includes(q) || p.client.toLowerCase().includes(q) || p.id.toLowerCase().includes(q));
+      const files = projectesErpCache_
+        .filter(p => filtreProjectesEstat_ === 'actius' ? p.nexaControlActiu : !p.nexaControlActiu)
+        .filter(p =>
+          !q || p.descripcio.toLowerCase().includes(q) || p.client.toLowerCase().includes(q) || p.id.toLowerCase().includes(q));
 
       const grid = document.getElementById('projectes-grid');
       grid.classList.toggle('ja-animat', projectesJaAnimat_);
@@ -1810,6 +1826,10 @@
     function errorSessio_(err) {
       const missatge = (err && err.message) || String(err) || 'Error desconegut.';
       console.error('Error Apps Script:', missatge);
+      // Sessió realment invàlida (token caducat/rebutjat pel servidor): en
+      // lloc de deixar l'app mig oberta amb un banner vermell, es torna
+      // netament a la pantalla de login (mateix camí que fer logout manual).
+      if (err && err.status === 401) { ferLogout(); return; }
       const zona = document.getElementById('app-error');
       zona.textContent = missatge;
       zona.style.display = 'block';
