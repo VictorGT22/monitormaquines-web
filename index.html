@@ -691,7 +691,7 @@
           <div class="projecte-top">
             <div class="projecte-info">
               <div class="client-tag">${escHtml_(p.client)}</div>
-              <div class="projecte-nom">${escHtml_(p.id)} — ${escHtml_(p.descripcio)}</div>
+              <div class="projecte-nom"><span class="projecte-id">${escHtml_(p.id)}</span>${escHtml_(p.descripcio)}</div>
             </div>
             ${p.nexaControlSuspes ? '<span class="chip-suspes">Desactivat</span>' : (p.nexaControlActiu ? '<span class="chip-nexacontrol">NexaControl</span>' : '')}
           </div>
@@ -707,7 +707,7 @@
                   <input type="number" min="0" step="0.01" class="input-preu-plus" data-id="${escHtml_(p.id)}" value="${p.preuPlus || 0}">
                 </div>
               </div>
-              <div class="projecte-botons">
+              <div class="projecte-botons projecte-grup">
                 <button class="btn btn-toggle-actiu${p.nexaControlSuspes ? ' btn-reactivar' : ' btn-suspendre'}" data-id="${escHtml_(p.id)}" data-actiu="${p.nexaControlSuspes ? 'true' : 'false'}">
                   ${p.nexaControlSuspes ? 'Reactivar' : 'Suspendre'}
                 </button>
@@ -718,7 +718,7 @@
                   ${p.mostrarReferencia ? 'Amagar filtre de referència' : 'Mostrar filtre de referència'}
                 </button>
               </div>
-              <div class="client-card-torns">
+              <div class="client-card-torns projecte-grup">
                 <label>Torns</label>
                 <div class="torns-chips" data-id="${escHtml_(p.id)}">
                   ${TOTS_TORNS_.map(torn => `
