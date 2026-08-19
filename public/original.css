@@ -507,7 +507,14 @@
      el que fa scroll és NOMÉS #fitxa-scroll, acabat just sota la capçalera) ── */
   #fitxa-view:not(.hidden) {
     display: flex; flex-direction: column;
-    height: calc(100vh - 112px); /* 56px app-header + ~56px de padding vertical de <main> */
+    /* --fitxa-top-offset el calcula ajustarAlcadaFitxa_() en JS (alçada
+       real de la capçalera + padding de <main>, que varia si la capçalera
+       encongeix a mòbil). "dvh" i no "vh": a mòbil 100vh inclou la barra
+       d'adreces amagada, així que en mostrar/amagar-se durant el scroll
+       aquesta alçada quedava desactualitzada i #fitxa-scroll deixava de
+       coincidir amb el viewport real — dvh es recalcula sol, sense JS. */
+    height: calc(100vh - var(--fitxa-top-offset, 112px));
+    height: calc(100dvh - var(--fitxa-top-offset, 112px));
     min-height: 0;
   }
   .fitxa-scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
