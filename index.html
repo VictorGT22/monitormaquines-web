@@ -1312,6 +1312,11 @@
           <div class="img-placeholder">
             ${m.imatgeUrl ? `<img src="${m.imatgeUrl}" alt="${escHtml_(m.nom)}">` : t_('senseImatge')}
             <div class="img-badge">${badgeHtml_(m.estatActual)}</div>
+            ${!incomunicada && !desactivada ? `
+              <div class="img-produccio-avui">
+                <span class="torn-punt" style="background:${COLORS_TORN_[m.tornActual] || 'var(--text-muted)'}"></span>
+                ${formatarNumero_(m.pecesBonesAvui)} ${t_('kpi_peces').toLowerCase()}
+              </div>` : ''}
           </div>
           <div class="maquina-info">
             <div class="maquina-top">
