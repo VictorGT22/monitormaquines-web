@@ -34,6 +34,8 @@
   html, body {
     background: var(--bg);
     overscroll-behavior: none;
+    overflow-x: hidden;
+    max-width: 100%;
   }
   body {
     font-family: var(--font-body);
@@ -871,8 +873,15 @@
   }
 
   @media (max-width: 560px) {
-    #app-header { padding: 0 16px; }
-    #app-header .client-name { font-size: 15px; }
+    #app-header {
+      padding: 10px 14px; height: auto; flex-wrap: wrap; row-gap: 8px;
+    }
+    #app-header .header-left { flex-wrap: wrap; row-gap: 8px; gap: 10px; }
+    #app-header .client-name { font-size: 14px; }
+    #app-header .header-logo { width: 32px; height: 32px; }
+    #app-header .header-logo img { width: 22px; height: 22px; }
+    #admin-nav { flex-wrap: wrap; row-gap: 6px; width: 100%; }
+    #admin-nav .nav-tab { font-size: 11px; padding: 6px 10px; }
     main { padding: 14px 10px; }
 
     .maquina-top { flex-wrap: wrap; }
