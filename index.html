@@ -1122,12 +1122,10 @@
     });
 
     function carregarMaquines(silenciós) {
-      // El text de cerca es filtra 100% al client (veure filtrarMaquinesText_):
-      // fer-ho al servidor disparava un RPC sencer a cada tecla i anava molt lent.
-      const filtres = esAdmin_ ? {
-        clientId: document.getElementById('filtre-client').value || null,
-        any: document.getElementById('filtre-admin-any').value || null
-      } : {};
+      // Client/any/text es filtren 100% al client (veure filtrarMaquinesText_):
+      // fer-ho al servidor disparava un RPC sencer (amb recàlcul de producció,
+      // parades, incidències...) cada cop que es tocava un desplegable i anava
+      // molt lent comparat amb la cerca de text, que ja era instantània.
       if (silenciós && maquinesCache_) {
         pintarMaquines(filtrarMaquinesText_(maquinesCache_));
       } else {
@@ -1146,7 +1144,7 @@
           precarregarFitxesMaquines_(maquines);
         })
         .withFailureHandler(errorSessio_)
-        .getMaquines(token, filtres);
+        .getMaquines(token, {});
     }
 
     // Carrega en silenci la fitxa de cada màquina (any actual, sense filtres)
@@ -1162,10 +1160,15 @@
     }
 
     function filtrarMaquinesText_(maquines) {
+      const clientId = esAdmin_ ? (document.getElementById('filtre-client').value || '') : '';
+      const any = esAdmin_ ? (document.getElementById('filtre-admin-any').value || '') : '';
       const q = (document.getElementById('filtre-admin-text').value || '').trim().toLowerCase();
-      if (!q) return maquines;
-      return maquines.filter(m =>
-        (m.nom || '').toLowerCase().includes(q) || (m.clientNom || '').toLowerCase().includes(q));
+      return maquines.filter(m => {
+        if (clientId && m.tenantId !== clientId) return false;
+        if (any && Number(m.anyAlta) !== Number(any)) return false;
+        if (q && !(m.nom || '').toLowerCase().includes(q) && !(m.clientNom || '').toLowerCase().includes(q)) return false;
+        return true;
+      });
     }
 
     const ICONA_WIFI_OFF = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 12.5a10 10 0 0 1 5.5-3.4"/><path d="M19 12.5a10 10 0 0 0-3.2-2.4"/><path d="M2 8.5a15 15 0 0 1 4.2-2.6"/><path d="M22 8.5a15 15 0 0 0-4.7-3"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>';
@@ -1848,11 +1851,12 @@
       return function (...args) { clearTimeout(h); h = setTimeout(() => fn.apply(this, args), ms); };
     }
 
-    document.getElementById('filtre-client').addEventListener('change', carregarMaquines);
-    document.getElementById('filtre-admin-any').addEventListener('change', carregarMaquines);
-    document.getElementById('filtre-admin-text').addEventListener('input', function () {
+    function refiltrarMaquines_() {
       if (maquinesCache_) pintarMaquines(filtrarMaquinesText_(maquinesCache_));
-    });
+    }
+    document.getElementById('filtre-client').addEventListener('change', refiltrarMaquines_);
+    document.getElementById('filtre-admin-any').addEventListener('change', refiltrarMaquines_);
+    document.getElementById('filtre-admin-text').addEventListener('input', refiltrarMaquines_);
 
     document.getElementById('filtre-any').addEventListener('change', carregarProduccio);
     document.getElementById('filtre-mes').addEventListener('change', carregarProduccio);
