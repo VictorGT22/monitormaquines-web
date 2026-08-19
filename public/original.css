@@ -231,6 +231,7 @@
   }
 
   #admin-nav { display: flex; gap: 4px; }
+  .subtabs { display: flex; gap: 4px; margin-bottom: 18px; }
   .nav-tab {
     background: transparent; border: none; color: var(--text-muted);
     padding: 7px 14px; border-radius: 10px; cursor: pointer; font-size: 13px;
@@ -275,6 +276,7 @@
   }
   .btn-activar:active, .btn-toggle-actiu:active, .btn-toggle-visible:active, .login-box button:active { transform: scale(.97); }
   .projecte-botons { display: flex; flex-wrap: wrap; gap: 8px; }
+  .projecte-botons .btn { flex: 1; width: auto; min-width: 140px; }
   .btn-neutral {
     background: transparent; border: 1px solid var(--border); color: var(--text-muted);
   }

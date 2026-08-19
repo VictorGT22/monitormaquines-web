@@ -22,7 +22,9 @@ async function apiFetch_(path, { method = 'GET', token, body } = {}) {
   let dades;
   try { dades = text ? JSON.parse(text) : null; } catch (e) { dades = text; }
   if (!resp.ok) {
-    throw new Error((dades && dades.error) || ('Error ' + resp.status));
+    const err = new Error((dades && dades.error) || ('Error ' + resp.status));
+    err.status = resp.status;
+    throw err;
   }
   return dades;
 }
