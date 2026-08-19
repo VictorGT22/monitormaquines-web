@@ -701,9 +701,6 @@
                 <button type="button" class="control-pill${p.controlCabal ? ' actiu' : ''}" data-tipus="cabal" data-id="${escHtml_(p.id)}">${ICONA_CABAL_}Control cabal</button>
                 <button type="button" class="control-pill${p.controlConsumElectric ? ' actiu' : ''}" data-tipus="consum" data-id="${escHtml_(p.id)}">${ICONA_CONSUM_}Consum elèctric</button>
                 <button type="button" class="control-pill${p.mostrarReferencia ? ' actiu' : ''}" data-tipus="referencia" data-id="${escHtml_(p.id)}">${ICONA_REFERENCIA_}Referència</button>
-                <button type="button" class="control-pill pill-marge-esquerra btn-toggle-actiu" data-id="${escHtml_(p.id)}" data-actiu="${p.nexaControlSuspes ? 'true' : 'false'}">
-                  ${p.nexaControlSuspes ? ICONA_PLAY_ : ICONA_PAUSE_}${p.nexaControlSuspes ? 'Reactivar' : 'Suspendre'}
-                </button>
               </div>
               <div class="projecte-data">
                 <label>Torns</label>
@@ -723,9 +720,14 @@
                   <input type="number" min="0" step="0.01" class="input-preu-plus" data-id="${escHtml_(p.id)}" value="${p.preuPlus || 0}">
                 </div>
               </div>
-              <button class="btn btn-neutral btn-toggle-visible" data-id="${escHtml_(p.id)}" data-visible="${p.visibleClient === false ? 'true' : 'false'}">
-                ${p.visibleClient === false ? 'Fer visible al client' : 'Amagar al client (posta en marxa)'}
-              </button>
+              <div class="projecte-botons">
+                <button type="button" class="btn btn-neutral btn-toggle-actiu" data-id="${escHtml_(p.id)}" data-actiu="${p.nexaControlSuspes ? 'true' : 'false'}">
+                  ${p.nexaControlSuspes ? 'Reactivar' : 'Suspendre'}
+                </button>
+                <button class="btn btn-neutral btn-toggle-visible" data-id="${escHtml_(p.id)}" data-visible="${p.visibleClient === false ? 'true' : 'false'}">
+                  ${p.visibleClient === false ? 'Fer visible al client' : 'Amagar al client (posta en marxa)'}
+                </button>
+              </div>
             </div>
           ` : `
             <div class="projecte-bottom">
@@ -1147,8 +1149,6 @@
 
     // Icones de la reestructuració de Projectes ERP — mateix estil que la resta
     // de l'app (stroke currentColor, viewBox 24, cantonades arrodonides).
-    const ICONA_PAUSE_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
-    const ICONA_PLAY_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.5v15l13-7.5-13-7.5z"/></svg>';
     const ICONA_CABAL_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5s6.5 7.6 6.5 12.1a6.5 6.5 0 0 1-13 0C5.5 10.1 12 2.5 12 2.5z"/></svg>';
     const ICONA_CONSUM_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 14h6L10 22l9.5-13h-6L13 2z"/></svg>';
     const ICONA_REFERENCIA_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.5 12.6 20.4a2 2 0 0 1-2.8 0l-6.2-6.2a2 2 0 0 1 0-2.8L11.5 3.5H19a1.5 1.5 0 0 1 1.5 1.5v7.5z"/><circle cx="16" cy="8" r="1.2"/></svg>';
