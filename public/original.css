@@ -444,7 +444,8 @@
   .chips-estat-maquines .estat-badge.estat-alarma.actiu::before { background: var(--vermell); opacity: 1; }
   .chips-estat-maquines .estat-badge.estat-parada.actiu { background: rgba(245,166,35,.15) !important; color: var(--ambre) !important; }
   .chips-estat-maquines .estat-badge.estat-parada.actiu::before { background: var(--ambre); opacity: 1; }
-  .chips-estat-maquines .estat-badge.estat-incomunicada.actiu { background: rgba(138,149,165,.15) !important; color: var(--text-muted) !important; }
+  .chips-estat-maquines .estat-badge.estat-incomunicada.actiu,
+  .chips-estat-maquines .estat-badge.estat-desactivada.actiu { background: rgba(138,149,165,.15) !important; color: var(--text-muted) !important; }
   .chips-estat-maquines .estat-badge.actiu { border-color: currentColor; }
   .chips-estat-maquines .estat-icona-wifi svg { display: block; }
   .estat-comptador {
