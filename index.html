@@ -498,10 +498,17 @@
     }
 
     function entrarApp_(resp, esNovaSessio) {
-      token = resp.token;
+      // getSessioActual (restauració de sessió existent) NO retorna token —
+      // només confirma que el ja guardat és vàlid. Només s'ha de sobreescriure
+      // quan és un login nou de veritat (login() sí retorna token); si no,
+      // es corromp el localStorage amb el text literal "undefined" i la
+      // pròxima vegada que s'obri l'app la sessió sembla caducada sempre.
+      if (resp.token) {
+        token = resp.token;
+        try { localStorage.setItem('monitor_token', token); } catch (e) {}
+      }
       esAdmin_ = resp.rol === 'admin';
       idioma_ = resp.idioma || 'ca';
-      try { localStorage.setItem('monitor_token', token); } catch (e) {}
       var errPrevi = document.getElementById('app-error');
       errPrevi.style.display = 'none';
       errPrevi.textContent = '';
