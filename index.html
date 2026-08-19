@@ -30,6 +30,7 @@
     </div>
   </div>
   <script>try{if(localStorage.getItem('monitor_token')){document.getElementById('login-view').style.display='none';}}catch(e){}</script>
+  <script>if (navigator.userAgent.indexOf('Electron') !== -1) document.documentElement.classList.add('es-electron');</script>
 
   <script>
   function _loginBtnTrace(btn) {
