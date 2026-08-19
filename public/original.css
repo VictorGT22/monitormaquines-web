@@ -275,14 +275,10 @@
   }
   .btn-activar:active, .btn-toggle-actiu:active, .btn-toggle-visible:active, .login-box button:active { transform: scale(.97); }
   .projecte-botons { display: flex; flex-wrap: wrap; gap: 8px; }
-  .btn-amagar {
-    background: transparent; border: 1px solid rgba(245,166,35,.4); color: var(--ambre);
+  .btn-neutral {
+    background: transparent; border: 1px solid var(--border); color: var(--text-muted);
   }
-  .btn-amagar:hover { background: rgba(245,166,35,.12); }
-  .btn-mostrar {
-    background: transparent; border: 1px solid rgba(77,163,255,.4); color: var(--accent);
-  }
-  .btn-mostrar:hover { background: rgba(77,163,255,.12); }
+  .btn-neutral:hover { border-color: rgba(255,255,255,.25); color: var(--text); }
   .chip-postamarxa {
     font-size: 10px; font-weight: 600; color: var(--ambre);
     background: rgba(245,166,35,.12); border: 1px solid rgba(245,166,35,.35);
@@ -744,14 +740,10 @@
   }
   .projecte-bottom { display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
   .projecte-camps { display: flex; gap: 10px; }
-  /* Ritme visual: separa dades / accions / torns amb la mateixa vora subtil
-     que ja fa servir la resta de l'app (--border), en lloc que tot flueixi
-     junt com un sol bloc de controls. */
-  .projecte-grup { padding-top: 12px; border-top: 1px solid var(--border); }
 
-  /* ── Projectes ERP: reestructuració (capçalera + xips de control + graella 2 columnes) ── */
+  /* ── Projectes ERP: reestructuració (capçalera + xips de control + torns + dades) ── */
   .projecte-header2 { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
-  .projecte-pills { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+  .projecte-pills { display: flex; flex-wrap: wrap; gap: 7px; }
   .pill-marge-esquerra { margin-left: auto; }
   .control-pill {
     display: flex; align-items: center; gap: 6px;
@@ -762,17 +754,7 @@
   .control-pill svg { width: 14px; height: 14px; flex: none; }
   .control-pill:hover { border-color: rgba(77,163,255,.35); color: var(--text); }
   .control-pill.actiu { background: rgba(77,163,255,.16); border-color: var(--accent); color: var(--accent); }
-  .control-pill.pill-suspendre { border-color: rgba(239,68,68,.4); color: var(--vermell); background: transparent; }
-  .control-pill.pill-suspendre:hover { background: rgba(239,68,68,.12); }
-  .control-pill.pill-reactivar { border-color: rgba(52,209,122,.4); color: var(--verd); background: transparent; }
-  .control-pill.pill-reactivar:hover { background: rgba(52,209,122,.12); }
 
-  .projecte-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  .projecte-col { display: flex; flex-direction: column; gap: 10px; }
-  .projecte-col > label {
-    font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em;
-  }
-  @media (max-width: 640px) { .projecte-grid2 { grid-template-columns: 1fr; } }
   .projecte-data { flex: 1; min-width: 0; }
   .projecte-data label {
     display: block; font-size: 10px; color: var(--text-muted); margin-bottom: 5px;
