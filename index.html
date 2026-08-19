@@ -1449,19 +1449,23 @@
       }, { root: document.getElementById('fitxa-scroll'), rootMargin: '-30% 0px -60% 0px' });
       document.querySelectorAll('#fitxa-view .panell').forEach(p => observer.observe(p));
     })();
-    // Alçada real de #fitxa-view calculada en JS (no un "calc(100vh - 112px)"
-    // fix): a mòbil la capçalera pot passar a 2 línies (envoltant el nav) i
-    // 100vh és poc fiable amb la barra d'adreces del navegador — mesurant en
-    // píxels reals cada resize evitem que aparegui scroll doble (finestra +
-    // #fitxa-scroll) o horitzontal per una capçalera que no encaixa.
+    // Nomes fixa --fitxa-top-offset (capçalera + padding de <main>, en px):
+    // la resta (calc amb dvh) ho fa el CSS sol. Abans es fixava una alçada
+    // en píxels calculada amb window.innerHeight, que quedava desactualitzada
+    // quan la barra d'adreces del navegador mòbil apareixia/desapareixia
+    // durant el scroll — #fitxa-scroll deixava de coincidir amb el viewport
+    // real i semblava que el scroll s'havia quedat encallat.
     function ajustarAlcadaFitxa_() {
-      const view = document.getElementById('fitxa-view');
-      if (!view || view.classList.contains('hidden')) return;
-      const top = view.getBoundingClientRect().top;
-      const main = view.closest('main') || document.querySelector('main');
-      const padBottom = parseFloat(getComputedStyle(main).paddingBottom) || 0;
-      view.style.height = Math.max(200, window.innerHeight - top - padBottom) + 'px';
+      const header = document.getElementById('app-header');
+      const main = document.querySelector('main');
+      if (!header || !main) return;
+      const mainStyle = getComputedStyle(main);
+      const padTop = parseFloat(mainStyle.paddingTop) || 0;
+      const padBottom = parseFloat(mainStyle.paddingBottom) || 0;
+      const offset = header.getBoundingClientRect().height + padTop + padBottom;
+      document.documentElement.style.setProperty('--fitxa-top-offset', offset + 'px');
     }
+    ajustarAlcadaFitxa_();
     window.addEventListener('resize', ajustarAlcadaFitxa_);
     window.addEventListener('orientationchange', ajustarAlcadaFitxa_);
     if (typeof ResizeObserver !== 'undefined') {
