@@ -648,6 +648,7 @@
   .resum-torn[data-torn="Tarda"] { border-left-color: #4da3ff; }
   .resum-torn[data-torn="Nit"] { border-left-color: #b582f8; }
   .empty-state { color: var(--text-muted); font-size: 13px; padding: 10px 0; }
+  td .empty-state { padding-left: 8px; }
 
   .skeleton-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
