@@ -744,7 +744,6 @@
   /* ── Projectes ERP: reestructuració (capçalera + xips de control + torns + dades) ── */
   .projecte-header2 { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
   .projecte-pills { display: flex; flex-wrap: wrap; gap: 7px; }
-  .pill-marge-esquerra { margin-left: auto; }
   .control-pill {
     display: flex; align-items: center; gap: 6px;
     padding: 6px 12px 6px 10px; border-radius: 20px; border: 1px solid var(--border);
