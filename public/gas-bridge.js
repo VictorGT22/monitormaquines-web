@@ -87,6 +87,12 @@ const IMPL = {
     const dades = await apiFetch_(`/maquines/${machineId}/consums` + qs_({ tipus, dataInici, dataFi }), { token });
     return JSON.stringify(dades);
   },
+  async getPreusConsum(token) {
+    return apiFetch_('/preus-consum', { token });
+  },
+  async setPreusConsum(token, aire, electric) {
+    return apiFetch_('/preus-consum', { method: 'PATCH', token, body: { aire, electric } });
+  },
 
   async versioDades(token) {
     const d = await apiFetch_('/versio', { token });
