@@ -214,6 +214,13 @@
   .error-msg:not(:empty) { margin-bottom: 10px; min-height: 16px; }
 
   /* ── App shell ─────────────────────────────────────── */
+  /* Electron amb titleBarOverlay: la finestra ja no té barra nativa amb
+     text/icona pròpia — l'#app-header fa de zona arrossegable, i deixem
+     espai a la dreta perquè els botons natius (minimitzar/maximitzar/
+     tancar, sempre a la dreta a Windows) no tapin el botó "Sortir". */
+  .es-electron #app-header { -webkit-app-region: drag; padding-right: 150px; }
+  .es-electron #app-header button, .es-electron #app-header .nav-tab { -webkit-app-region: no-drag; }
+
   #app-header {
     background: rgba(27,33,42,.85);
     backdrop-filter: blur(14px) saturate(140%);
