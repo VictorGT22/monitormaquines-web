@@ -117,6 +117,12 @@
             <input type="text" id="filtre-admin-text" placeholder="Cercar per nom...">
           </div>
         </div>
+        <div class="chips-estat-maquines hidden" id="chips-estat-maquines">
+          <button type="button" class="estat-badge estat-marxa clicable" data-estat="marxa"><span class="estat-nom"></span><span class="estat-comptador">0</span></button>
+          <button type="button" class="estat-badge estat-parada clicable" data-estat="parada"><span class="estat-nom"></span><span class="estat-comptador">0</span></button>
+          <button type="button" class="estat-badge estat-alarma clicable" data-estat="alarma"><span class="estat-nom"></span><span class="estat-comptador">0</span></button>
+          <button type="button" class="estat-badge estat-incomunicada clicable" data-estat="incomunicada"><span class="estat-icona-wifi"></span><span class="estat-nom"></span><span class="estat-comptador">0</span></button>
+        </div>
         <div id="maquines-grid"></div>
       </div>
 
@@ -513,6 +519,11 @@
       document.getElementById('lbl-admin-any').textContent = t_('f_any');
       document.getElementById('lbl-admin-text').textContent = t_('admin_cercarLbl');
       document.getElementById('filtre-admin-text').placeholder = t_('admin_cercar');
+      document.querySelectorAll('#chips-estat-maquines .estat-badge').forEach(btn => {
+        btn.querySelector('.estat-nom').textContent = t_('estat_' + btn.dataset.estat);
+      });
+      const iconaWifi = document.querySelector('#chips-estat-maquines .estat-icona-wifi');
+      if (iconaWifi) iconaWifi.innerHTML = ICONA_WIFI_OFF;
 
       const selMes = document.getElementById('filtre-mes');
       const mesActual = selMes.value;
@@ -586,6 +597,7 @@
       document.getElementById('app-view').classList.remove('hidden');
       document.getElementById('admin-filtres').classList.toggle('hidden', !esAdmin_);
       document.getElementById('admin-nav').classList.toggle('hidden', !esAdmin_);
+      document.getElementById('chips-estat-maquines').classList.toggle('hidden', !esAdmin_);
       document.getElementById('preu-aire-wrap').classList.toggle('hidden', !esAdmin_);
       document.getElementById('preu-electric-wrap').classList.toggle('hidden', !esAdmin_);
       aplicarIdioma_();
@@ -1230,15 +1242,31 @@
       });
     }
 
+    let filtreEstatMaquines_ = null;
+
     function filtrarMaquinesText_(maquines) {
       const clientId = esAdmin_ ? (document.getElementById('filtre-client').value || '') : '';
       const any = esAdmin_ ? (document.getElementById('filtre-admin-any').value || '') : '';
       const q = (document.getElementById('filtre-admin-text').value || '').trim().toLowerCase();
-      return maquines.filter(m => {
+      const abansEstat = maquines.filter(m => {
         if (clientId && m.tenantId !== clientId) return false;
         if (any && Number(m.anyAlta) !== Number(any)) return false;
         if (q && !(m.nom || '').toLowerCase().includes(q) && !(m.clientNom || '').toLowerCase().includes(q)) return false;
         return true;
+      });
+      if (esAdmin_) pintarChipsEstat_(abansEstat);
+      if (!filtreEstatMaquines_) return abansEstat;
+      return abansEstat.filter(m => m.estatActual === filtreEstatMaquines_);
+    }
+
+    function pintarChipsEstat_(maquines) {
+      const cont = document.getElementById('chips-estat-maquines');
+      const comptes = { marxa: 0, parada: 0, alarma: 0, incomunicada: 0 };
+      maquines.forEach(m => { if (comptes[m.estatActual] !== undefined) comptes[m.estatActual]++; });
+      cont.querySelectorAll('.estat-badge').forEach(btn => {
+        const estat = btn.dataset.estat;
+        btn.querySelector('.estat-comptador').textContent = comptes[estat];
+        btn.classList.toggle('actiu', filtreEstatMaquines_ === estat);
       });
     }
 
@@ -2038,6 +2066,13 @@
     document.getElementById('filtre-client').addEventListener('change', refiltrarMaquines_);
     document.getElementById('filtre-admin-any').addEventListener('change', refiltrarMaquines_);
     document.getElementById('filtre-admin-text').addEventListener('input', refiltrarMaquines_);
+    document.getElementById('chips-estat-maquines').addEventListener('click', function (e) {
+      const btn = e.target.closest('.estat-badge');
+      if (!btn) return;
+      const estat = btn.dataset.estat;
+      filtreEstatMaquines_ = filtreEstatMaquines_ === estat ? null : estat;
+      refiltrarMaquines_();
+    });
 
     function canviarModeProduccio_(mode) {
       document.querySelectorAll('#mode-periode-produccio .nav-tab').forEach(b => b.classList.toggle('actiu', b.dataset.mode === mode));
