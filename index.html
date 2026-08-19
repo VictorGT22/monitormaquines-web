@@ -197,6 +197,15 @@
               <select id="filtre-referencia"></select>
             </div>
           </div>
+          <div class="kpi-periode-label" id="lbl-periode-avui">Avui</div>
+          <div class="kpi-row">
+            <div class="kpi kpi-produccio"><div class="valor" id="kpi-avui-peces">-</div><div class="etiqueta" id="lbl-kpi-avui-peces">Peces bones</div></div>
+            <div class="kpi kpi-merma"><div class="valor" id="kpi-avui-merma">-</div><div class="etiqueta" id="lbl-kpi-avui-merma">Merma</div></div>
+            <div class="kpi kpi-actiu-wrap"><div class="valor" id="kpi-avui-actiu">-</div><div class="etiqueta" id="lbl-kpi-avui-actiu">Temps actiu</div></div>
+            <div class="kpi kpi-parat-wrap"><div class="valor" id="kpi-avui-parat">-</div><div class="etiqueta" id="lbl-kpi-avui-parat">Temps parat</div></div>
+            <div class="kpi kpi-oee-wrap"><div class="valor" id="kpi-avui-oee">-</div><div class="etiqueta" id="lbl-kpi-avui-oee">OEE</div></div>
+          </div>
+          <div class="kpi-periode-label" id="lbl-periode-total">Total (període filtrat)</div>
           <div id="resum-torns" class="kpi-row resum-torns hidden"></div>
           <div class="kpi-row">
             <div class="kpi kpi-produccio"><div class="valor" id="kpi-peces">-</div><div class="etiqueta" id="lbl-kpi-peces">Peces bones</div></div>
@@ -321,6 +330,7 @@
         produccio_titol: 'Producció',
         f_any: 'Any', f_mes: 'Mes', f_torn: 'Torn', f_tots: 'Tots', f_totes: 'Totes', f_referencia: 'Referència', f_filtrar: 'Filtrar',
         kpi_peces: 'Peces bones', kpi_merma: 'Merma', kpi_actiu: 'Temps actiu', kpi_parat: 'Temps parat', kpi_oee: 'OEE',
+        periode_avui: 'Avui', periode_total: 'Total (període filtrat)',
         oee_disponibilitat: 'Disponibilitat', oee_qualitat: 'Qualitat',
         taula_dia: 'Dia', taula_pecesbones: 'Peces bones', taula_merma: 'Merma', taula_actiu: 'Actiu (min)',
         paradas_titol: 'Paradas del període', taula_inici: 'Inici', taula_fi: 'Fi', taula_durada: 'Durada (min)', taula_causa: 'Causa',
@@ -340,6 +350,7 @@
         produccio_titol: 'Producción',
         f_any: 'Año', f_mes: 'Mes', f_torn: 'Turno', f_tots: 'Todos', f_totes: 'Todas', f_referencia: 'Referencia', f_filtrar: 'Filtrar',
         kpi_peces: 'Piezas buenas', kpi_merma: 'Merma', kpi_actiu: 'Tiempo activo', kpi_parat: 'Tiempo parado', kpi_oee: 'OEE',
+        periode_avui: 'Hoy', periode_total: 'Total (período filtrado)',
         oee_disponibilitat: 'Disponibilidad', oee_qualitat: 'Calidad',
         taula_dia: 'Día', taula_pecesbones: 'Piezas buenas', taula_merma: 'Merma', taula_actiu: 'Activo (min)',
         paradas_titol: 'Paradas del período', taula_inici: 'Inicio', taula_fi: 'Fin', taula_durada: 'Duración (min)', taula_causa: 'Causa',
@@ -359,6 +370,7 @@
         produccio_titol: 'Production',
         f_any: 'Year', f_mes: 'Month', f_torn: 'Shift', f_tots: 'All', f_totes: 'All', f_referencia: 'Reference', f_filtrar: 'Filter',
         kpi_peces: 'Good parts', kpi_merma: 'Scrap', kpi_actiu: 'Active time', kpi_parat: 'Stopped time', kpi_oee: 'OEE',
+        periode_avui: 'Today', periode_total: 'Total (filtered period)',
         oee_disponibilitat: 'Availability', oee_qualitat: 'Quality',
         taula_dia: 'Day', taula_pecesbones: 'Good parts', taula_merma: 'Scrap', taula_actiu: 'Active (min)',
         paradas_titol: 'Stops in period', taula_inici: 'Start', taula_fi: 'End', taula_durada: 'Duration (min)', taula_causa: 'Cause',
@@ -393,6 +405,13 @@
       document.getElementById('lbl-kpi-actiu').textContent = t_('kpi_actiu');
       document.getElementById('lbl-kpi-parat').textContent = t_('kpi_parat');
       document.getElementById('lbl-kpi-oee').textContent = t_('kpi_oee');
+      document.getElementById('lbl-periode-avui').textContent = t_('periode_avui');
+      document.getElementById('lbl-periode-total').textContent = t_('periode_total');
+      document.getElementById('lbl-kpi-avui-peces').textContent = t_('kpi_peces');
+      document.getElementById('lbl-kpi-avui-merma').textContent = t_('kpi_merma');
+      document.getElementById('lbl-kpi-avui-actiu').textContent = t_('kpi_actiu');
+      document.getElementById('lbl-kpi-avui-parat').textContent = t_('kpi_parat');
+      document.getElementById('lbl-kpi-avui-oee').textContent = t_('kpi_oee');
       document.getElementById('oee-leg-lbl-disp').textContent = t_('oee_disponibilitat');
       document.getElementById('oee-leg-lbl-qual').textContent = t_('oee_qualitat');
       document.getElementById('th-dia').textContent = t_('taula_dia');
@@ -1371,6 +1390,15 @@
           (p.referenciesDisponibles || []).map(r => `<option value="${escHtml_(r)}">${escHtml_(r)}</option>`).join('');
         selRef.value = refActual;
         referenciaPoblat_ = true;
+      }
+
+      if (p.resumAvui) {
+        const ra = p.resumAvui;
+        document.getElementById('kpi-avui-peces').textContent = formatarNumero_(ra.pecesBones);
+        document.getElementById('kpi-avui-merma').textContent = formatarNumero_(ra.pecesMerma) + ' (' + ra.percentMerma + '%)';
+        document.getElementById('kpi-avui-actiu').textContent = formatarHoresMin_(ra.tempsActiuMin) + ' (' + (ra.disponibilitat * 100).toFixed(0) + '%)';
+        document.getElementById('kpi-avui-parat').textContent = formatarHoresMin_(ra.tempsParatMin);
+        document.getElementById('kpi-avui-oee').textContent = (ra.oee * 100).toFixed(0) + '%';
       }
 
       const r = p.resum;
