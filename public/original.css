@@ -736,7 +736,6 @@
   .projecte-card.suspes { opacity: .6 !important; }
   .projecte-card.suspes:hover { transform: none; border-color: var(--border); box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.05); }
   .projecte-card.suspes::after { display: none; }
-  .projecte-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
   .projecte-info { min-width: 0; }
   .projecte-nom { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.35; }
   .projecte-id {
@@ -749,6 +748,31 @@
      que ja fa servir la resta de l'app (--border), en lloc que tot flueixi
      junt com un sol bloc de controls. */
   .projecte-grup { padding-top: 12px; border-top: 1px solid var(--border); }
+
+  /* ── Projectes ERP: reestructuració (capçalera + xips de control + graella 2 columnes) ── */
+  .projecte-header2 { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+  .projecte-pills { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+  .pill-marge-esquerra { margin-left: auto; }
+  .control-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px 6px 10px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text-muted); font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  }
+  .control-pill svg { width: 14px; height: 14px; flex: none; }
+  .control-pill:hover { border-color: rgba(77,163,255,.35); color: var(--text); }
+  .control-pill.actiu { background: rgba(77,163,255,.16); border-color: var(--accent); color: var(--accent); }
+  .control-pill.pill-suspendre { border-color: rgba(239,68,68,.4); color: var(--vermell); background: transparent; }
+  .control-pill.pill-suspendre:hover { background: rgba(239,68,68,.12); }
+  .control-pill.pill-reactivar { border-color: rgba(52,209,122,.4); color: var(--verd); background: transparent; }
+  .control-pill.pill-reactivar:hover { background: rgba(52,209,122,.12); }
+
+  .projecte-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .projecte-col { display: flex; flex-direction: column; gap: 10px; }
+  .projecte-col > label {
+    font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em;
+  }
+  @media (max-width: 640px) { .projecte-grid2 { grid-template-columns: 1fr; } }
   .projecte-data { flex: 1; min-width: 0; }
   .projecte-data label {
     display: block; font-size: 10px; color: var(--text-muted); margin-bottom: 5px;

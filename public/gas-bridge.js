@@ -108,6 +108,12 @@ const IMPL = {
   async canviarMostrarReferencia(token, projecteId, mostrar) {
     return apiFetch_(`/projectes-erp/${projecteId}/mostrar-referencia`, { method: 'PATCH', token, body: { mostrar } });
   },
+  async canviarControlCabal(token, projecteId, actiu) {
+    return apiFetch_(`/projectes-erp/${projecteId}/control-cabal`, { method: 'PATCH', token, body: { actiu } });
+  },
+  async canviarControlConsumElectric(token, projecteId, actiu) {
+    return apiFetch_(`/projectes-erp/${projecteId}/control-consum-electric`, { method: 'PATCH', token, body: { actiu } });
+  },
   async canviarTornsProjecte(token, projecteId, torns) {
     return apiFetch_(`/projectes-erp/${projecteId}/torns`, { method: 'PATCH', token, body: { torns } });
   },
