@@ -688,45 +688,43 @@
       projectesJaAnimat_ = true;
       grid.innerHTML = files.map(p => `
         <div class="projecte-card${p.nexaControlSuspes ? ' suspes' : ''}">
-          <div class="projecte-top">
+          ${p.nexaControlSuspes ? '<span class="chip-suspes">Desactivat</span>' : (p.nexaControlActiu ? '<span class="chip-nexacontrol">NexaControl</span>' : '')}
+          <div class="projecte-header2">
             <div class="projecte-info">
               <div class="client-tag">${escHtml_(p.client)}</div>
               <div class="projecte-nom"><span class="projecte-id">${escHtml_(p.id)}</span>${escHtml_(p.descripcio)}</div>
             </div>
-            ${p.nexaControlSuspes ? '<span class="chip-suspes">Desactivat</span>' : (p.nexaControlActiu ? '<span class="chip-nexacontrol">NexaControl</span>' : '')}
           </div>
-          <div class="projecte-bottom">
-            ${p.nexaControlActiu ? `
-              <div class="projecte-camps">
-                <div class="projecte-data">
-                  <label>Implementació a fàbrica</label>
-                  <input type="text" class="date-input input-data-implementacio" data-id="${escHtml_(p.id)}" readonly placeholder="dd/mm/aaaa" value="${p.dataImplementacio ? p.dataImplementacio.substring(0, 10) : ''}">
-                </div>
-                <div class="projecte-data">
-                  <label>Plus (€)</label>
-                  <input type="number" min="0" step="0.01" class="input-preu-plus" data-id="${escHtml_(p.id)}" value="${p.preuPlus || 0}">
-                </div>
+          ${p.nexaControlActiu ? `
+            <div class="projecte-pills">
+              <button type="button" class="control-pill${p.controlCabal ? ' actiu' : ''}" data-tipus="cabal" data-id="${escHtml_(p.id)}">${ICONA_CABAL_}Control cabal</button>
+              <button type="button" class="control-pill${p.controlConsumElectric ? ' actiu' : ''}" data-tipus="consum" data-id="${escHtml_(p.id)}">${ICONA_CONSUM_}Consum elèctric</button>
+              <button type="button" class="control-pill${p.mostrarReferencia ? ' actiu' : ''}" data-tipus="referencia" data-id="${escHtml_(p.id)}">${ICONA_REFERENCIA_}Referència</button>
+              <button type="button" class="control-pill pill-marge-esquerra ${p.nexaControlSuspes ? 'pill-reactivar' : 'pill-suspendre'} btn-toggle-actiu" data-id="${escHtml_(p.id)}" data-actiu="${p.nexaControlSuspes ? 'true' : 'false'}">
+                ${p.nexaControlSuspes ? ICONA_PLAY_ : ICONA_PAUSE_}${p.nexaControlSuspes ? 'Reactivar' : 'Suspendre'}
+              </button>
+            </div>
+            <div class="projecte-grid2">
+              <div class="projecte-col">
+                <label>Implementació a fàbrica</label>
+                <input type="text" class="date-input input-data-implementacio" data-id="${escHtml_(p.id)}" readonly placeholder="dd/mm/aaaa" value="${p.dataImplementacio ? p.dataImplementacio.substring(0, 10) : ''}">
+                <label>Plus (€)</label>
+                <input type="number" min="0" step="0.01" class="input-preu-plus" data-id="${escHtml_(p.id)}" value="${p.preuPlus || 0}">
               </div>
-              <div class="projecte-botons projecte-grup">
-                <button class="btn btn-toggle-actiu${p.nexaControlSuspes ? ' btn-reactivar' : ' btn-suspendre'}" data-id="${escHtml_(p.id)}" data-actiu="${p.nexaControlSuspes ? 'true' : 'false'}">
-                  ${p.nexaControlSuspes ? 'Reactivar' : 'Suspendre'}
-                </button>
-                <button class="btn btn-toggle-visible${p.visibleClient === false ? ' btn-mostrar' : ' btn-amagar'}" data-id="${escHtml_(p.id)}" data-visible="${p.visibleClient === false ? 'true' : 'false'}">
-                  ${p.visibleClient === false ? 'Fer visible al client' : 'Amagar al client (posta en marxa)'}
-                </button>
-                <button class="btn btn-toggle-ref${p.mostrarReferencia ? ' btn-amagar' : ' btn-mostrar'}" data-id="${escHtml_(p.id)}" data-mostrar="${p.mostrarReferencia ? 'false' : 'true'}">
-                  ${p.mostrarReferencia ? 'Amagar filtre de referència' : 'Mostrar filtre de referència'}
-                </button>
-              </div>
-              <div class="client-card-torns projecte-grup">
+              <div class="projecte-col">
                 <label>Torns</label>
                 <div class="torns-chips" data-id="${escHtml_(p.id)}">
                   ${TOTS_TORNS_.map(torn => `
                     <button type="button" class="torn-chip${p.torns.indexOf(torn) !== -1 ? ' actiu' : ''}" data-torn="${torn}">${DICC[idioma_].torns[torn]}</button>
                   `).join('')}
                 </div>
+                <button class="btn btn-toggle-visible${p.visibleClient === false ? ' btn-mostrar' : ' btn-amagar'}" data-id="${escHtml_(p.id)}" data-visible="${p.visibleClient === false ? 'true' : 'false'}">
+                  ${p.visibleClient === false ? 'Fer visible al client' : 'Amagar al client (posta en marxa)'}
+                </button>
               </div>
-            ` : `
+            </div>
+          ` : `
+            <div class="projecte-bottom">
               <div class="projecte-camps">
                 <div class="projecte-data">
                   <label>Plus (€)</label>
@@ -734,8 +732,8 @@
                 </div>
               </div>
               <button class="btn btn-activar" data-id="${escHtml_(p.id)}" data-desc="${escHtml_(p.descripcio)}" data-client="${escHtml_(p.client)}">Activar</button>
-            `}
-          </div>
+            </div>
+          `}
         </div>`).join('') || `<div class="empty-state">${t_('buit_dades')}</div>`;
     }
 
@@ -768,6 +766,14 @@
       if (btnRef) {
         const properMostrar = btnRef.dataset.mostrar === 'true';
         canviarMostrarReferencia_(btnRef.dataset.id, properMostrar);
+        return;
+      }
+      const pill = e.target.closest('.control-pill');
+      if (pill) {
+        const id = pill.dataset.id;
+        if (pill.dataset.tipus === 'referencia') { canviarMostrarReferencia_(id, !pill.classList.contains('actiu')); return; }
+        if (pill.dataset.tipus === 'cabal') { canviarControlCabal_(id, !pill.classList.contains('actiu')); return; }
+        if (pill.dataset.tipus === 'consum') { canviarControlConsumElectric_(id, !pill.classList.contains('actiu')); return; }
         return;
       }
       const chip = e.target.closest('.torn-chip');
@@ -971,6 +977,30 @@
         .canviarMostrarReferencia(token, id, mostrar);
     }
 
+    function canviarControlCabal_(id, actiu) {
+      const item = projectesErpCache_.find(p => p.id === id);
+      if (item) { item.controlCabal = actiu; pintarProjectesTaula_(); }
+      google.script.run
+        .withSuccessHandler(function () { carregarProjectesErp(true); })
+        .withFailureHandler(function (err) {
+          if (item) { item.controlCabal = !actiu; pintarProjectesTaula_(); }
+          errorSessio_(err);
+        })
+        .canviarControlCabal(token, id, actiu);
+    }
+
+    function canviarControlConsumElectric_(id, actiu) {
+      const item = projectesErpCache_.find(p => p.id === id);
+      if (item) { item.controlConsumElectric = actiu; pintarProjectesTaula_(); }
+      google.script.run
+        .withSuccessHandler(function () { carregarProjectesErp(true); })
+        .withFailureHandler(function (err) {
+          if (item) { item.controlConsumElectric = !actiu; pintarProjectesTaula_(); }
+          errorSessio_(err);
+        })
+        .canviarControlConsumElectric(token, id, actiu);
+    }
+
     function guardarDataImplementacio_(id, novaData) {
       google.script.run
         .withSuccessHandler(function () {
@@ -1110,6 +1140,14 @@
     }
 
     const ICONA_WIFI_OFF = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 12.5a10 10 0 0 1 5.5-3.4"/><path d="M19 12.5a10 10 0 0 0-3.2-2.4"/><path d="M2 8.5a15 15 0 0 1 4.2-2.6"/><path d="M22 8.5a15 15 0 0 0-4.7-3"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>';
+
+    // Icones de la reestructuració de Projectes ERP — mateix estil que la resta
+    // de l'app (stroke currentColor, viewBox 24, cantonades arrodonides).
+    const ICONA_PAUSE_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+    const ICONA_PLAY_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.5v15l13-7.5-13-7.5z"/></svg>';
+    const ICONA_CABAL_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5s6.5 7.6 6.5 12.1a6.5 6.5 0 0 1-13 0C5.5 10.1 12 2.5 12 2.5z"/></svg>';
+    const ICONA_CONSUM_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 14h6L10 22l9.5-13h-6L13 2z"/></svg>';
+    const ICONA_REFERENCIA_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.5 12.6 20.4a2 2 0 0 1-2.8 0l-6.2-6.2a2 2 0 0 1 0-2.8L11.5 3.5H19a1.5 1.5 0 0 1 1.5 1.5v7.5z"/><circle cx="16" cy="8" r="1.2"/></svg>';
 
     function badgeHtml_(estat) {
       const icona = estat === 'incomunicada' ? ICONA_WIFI_OFF : '';
