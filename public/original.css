@@ -137,7 +137,12 @@
     width: 26px; height: 26px; padding: 0; margin: 0; border: none; background: transparent;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
     border-radius: 6px; box-shadow: none;
+    /* Sense això, alguns WebView Android apliquen el "pressed state" natiu
+       del control (desplaça el contingut avall mentre es manté premut). */
+    -webkit-appearance: none; appearance: none;
+    -webkit-tap-highlight-color: transparent;
   }
+  .login-box .login-toggle-pw:active { transform: translateY(-50%); }
   .login-box .login-toggle-pw:hover { background: rgba(255,255,255,.06); }
   .login-toggle-pw svg { width: 16px; height: 16px; }
   .login-toggle-pw.showing svg { stroke: var(--accent); }
@@ -150,6 +155,10 @@
   }
   .login-box input::placeholder { color: var(--text-muted); }
   #login-password { padding-right: 40px; }
+  /* Edge afegeix el seu propi icona d'"ull" natiu dins de inputs
+     type=password, que xoca amb el nostre botó personalitzat i fa que
+     sembli que es desplaça en prémer. */
+  #login-password::-ms-reveal, #login-password::-ms-clear { display: none; }
   .login-box input:focus {
     border-color: var(--accent);
     outline: none;
