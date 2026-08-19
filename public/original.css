@@ -739,8 +739,16 @@
   .projecte-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
   .projecte-info { min-width: 0; }
   .projecte-nom { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.35; }
+  .projecte-id {
+    font-family: var(--font-mono); font-weight: 500; color: var(--text-muted);
+    font-size: 12px; letter-spacing: .02em; margin-right: 7px;
+  }
   .projecte-bottom { display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
   .projecte-camps { display: flex; gap: 10px; }
+  /* Ritme visual: separa dades / accions / torns amb la mateixa vora subtil
+     que ja fa servir la resta de l'app (--border), en lloc que tot flueixi
+     junt com un sol bloc de controls. */
+  .projecte-grup { padding-top: 12px; border-top: 1px solid var(--border); }
   .projecte-data { flex: 1; min-width: 0; }
   .projecte-data label {
     display: block; font-size: 10px; color: var(--text-muted); margin-bottom: 5px;
