@@ -83,6 +83,11 @@ const IMPL = {
     return JSON.stringify({ fitxa, produccio });
   },
 
+  async getConsums(token, machineId, tipus, dataInici, dataFi) {
+    const dades = await apiFetch_(`/maquines/${machineId}/consums` + qs_({ tipus, dataInici, dataFi }), { token });
+    return JSON.stringify(dades);
+  },
+
   async versioDades(token) {
     const d = await apiFetch_('/versio', { token });
     return d.v || 0;
