@@ -34,7 +34,11 @@
   html, body {
     background: var(--bg);
     overscroll-behavior: none;
-    overflow-x: hidden;
+    /* "clip" i no "hidden": overflow-x:hidden a html/body crea un
+       contenidor de scroll que trenca el position:sticky de #app-header
+       (bug conegut a Chromium/Electron) — clip talla el desbordament
+       igual però no estableix aquest contenidor. */
+    overflow-x: clip;
     max-width: 100%;
   }
   body {
