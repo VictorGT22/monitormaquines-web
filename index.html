@@ -1370,6 +1370,7 @@
       document.getElementById('filtre-fins-c').value = '';
       document.getElementById('home-view').classList.add('hidden');
       document.getElementById('fitxa-view').classList.remove('hidden');
+      ajustarAlcadaFitxa_();
       const scrollBox = document.getElementById('fitxa-scroll');
       if (scrollBox) scrollBox.scrollTop = 0;
       const sticky = document.getElementById('fitxa-sticky');
@@ -1446,6 +1447,25 @@
       }, { root: document.getElementById('fitxa-scroll'), rootMargin: '-30% 0px -60% 0px' });
       document.querySelectorAll('#fitxa-view .panell').forEach(p => observer.observe(p));
     })();
+    // Alçada real de #fitxa-view calculada en JS (no un "calc(100vh - 112px)"
+    // fix): a mòbil la capçalera pot passar a 2 línies (envoltant el nav) i
+    // 100vh és poc fiable amb la barra d'adreces del navegador — mesurant en
+    // píxels reals cada resize evitem que aparegui scroll doble (finestra +
+    // #fitxa-scroll) o horitzontal per una capçalera que no encaixa.
+    function ajustarAlcadaFitxa_() {
+      const view = document.getElementById('fitxa-view');
+      if (!view || view.classList.contains('hidden')) return;
+      const top = view.getBoundingClientRect().top;
+      const main = view.closest('main') || document.querySelector('main');
+      const padBottom = parseFloat(getComputedStyle(main).paddingBottom) || 0;
+      view.style.height = Math.max(200, window.innerHeight - top - padBottom) + 'px';
+    }
+    window.addEventListener('resize', ajustarAlcadaFitxa_);
+    window.addEventListener('orientationchange', ajustarAlcadaFitxa_);
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(ajustarAlcadaFitxa_).observe(document.getElementById('app-header'));
+    }
+
     // Condensa la capçalera (amaga la imatge) en fer scroll DINS #fitxa-scroll
     // (ja no la finestra: el scroll ara és intern, acabat just sota la capçalera).
     // Dos llindars diferents
