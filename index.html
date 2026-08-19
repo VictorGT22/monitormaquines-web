@@ -696,16 +696,24 @@
             </div>
           </div>
           ${p.nexaControlActiu ? `
-            <div class="projecte-pills">
-              <button type="button" class="control-pill${p.controlCabal ? ' actiu' : ''}" data-tipus="cabal" data-id="${escHtml_(p.id)}">${ICONA_CABAL_}Control cabal</button>
-              <button type="button" class="control-pill${p.controlConsumElectric ? ' actiu' : ''}" data-tipus="consum" data-id="${escHtml_(p.id)}">${ICONA_CONSUM_}Consum elèctric</button>
-              <button type="button" class="control-pill${p.mostrarReferencia ? ' actiu' : ''}" data-tipus="referencia" data-id="${escHtml_(p.id)}">${ICONA_REFERENCIA_}Referència</button>
-              <button type="button" class="control-pill pill-marge-esquerra ${p.nexaControlSuspes ? 'pill-reactivar' : 'pill-suspendre'} btn-toggle-actiu" data-id="${escHtml_(p.id)}" data-actiu="${p.nexaControlSuspes ? 'true' : 'false'}">
-                ${p.nexaControlSuspes ? ICONA_PLAY_ : ICONA_PAUSE_}${p.nexaControlSuspes ? 'Reactivar' : 'Suspendre'}
-              </button>
-            </div>
-            <div class="projecte-grid2">
-              <div class="projecte-col">
+            <div class="projecte-bottom">
+              <div class="projecte-pills">
+                <button type="button" class="control-pill${p.controlCabal ? ' actiu' : ''}" data-tipus="cabal" data-id="${escHtml_(p.id)}">${ICONA_CABAL_}Control cabal</button>
+                <button type="button" class="control-pill${p.controlConsumElectric ? ' actiu' : ''}" data-tipus="consum" data-id="${escHtml_(p.id)}">${ICONA_CONSUM_}Consum elèctric</button>
+                <button type="button" class="control-pill${p.mostrarReferencia ? ' actiu' : ''}" data-tipus="referencia" data-id="${escHtml_(p.id)}">${ICONA_REFERENCIA_}Referència</button>
+                <button type="button" class="control-pill pill-marge-esquerra btn-toggle-actiu" data-id="${escHtml_(p.id)}" data-actiu="${p.nexaControlSuspes ? 'true' : 'false'}">
+                  ${p.nexaControlSuspes ? ICONA_PLAY_ : ICONA_PAUSE_}${p.nexaControlSuspes ? 'Reactivar' : 'Suspendre'}
+                </button>
+              </div>
+              <div class="projecte-data">
+                <label>Torns</label>
+                <div class="torns-chips" data-id="${escHtml_(p.id)}">
+                  ${TOTS_TORNS_.map(torn => `
+                    <button type="button" class="torn-chip${p.torns.indexOf(torn) !== -1 ? ' actiu' : ''}" data-torn="${torn}">${DICC[idioma_].torns[torn]}</button>
+                  `).join('')}
+                </div>
+              </div>
+              <div class="projecte-camps">
                 <div class="projecte-data">
                   <label>Implementació a fàbrica</label>
                   <input type="text" class="date-input input-data-implementacio" data-id="${escHtml_(p.id)}" readonly placeholder="dd/mm/aaaa" value="${p.dataImplementacio ? p.dataImplementacio.substring(0, 10) : ''}">
@@ -715,19 +723,9 @@
                   <input type="number" min="0" step="0.01" class="input-preu-plus" data-id="${escHtml_(p.id)}" value="${p.preuPlus || 0}">
                 </div>
               </div>
-              <div class="projecte-col">
-                <div class="projecte-data">
-                  <label>Torns</label>
-                  <div class="torns-chips" data-id="${escHtml_(p.id)}">
-                    ${TOTS_TORNS_.map(torn => `
-                      <button type="button" class="torn-chip${p.torns.indexOf(torn) !== -1 ? ' actiu' : ''}" data-torn="${torn}">${DICC[idioma_].torns[torn]}</button>
-                    `).join('')}
-                  </div>
-                </div>
-                <button class="btn btn-toggle-visible${p.visibleClient === false ? ' btn-mostrar' : ' btn-amagar'}" data-id="${escHtml_(p.id)}" data-visible="${p.visibleClient === false ? 'true' : 'false'}">
-                  ${p.visibleClient === false ? 'Fer visible al client' : 'Amagar al client (posta en marxa)'}
-                </button>
-              </div>
+              <button class="btn btn-neutral btn-toggle-visible" data-id="${escHtml_(p.id)}" data-visible="${p.visibleClient === false ? 'true' : 'false'}">
+                ${p.visibleClient === false ? 'Fer visible al client' : 'Amagar al client (posta en marxa)'}
+              </button>
             </div>
           ` : `
             <div class="projecte-bottom">
