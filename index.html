@@ -177,12 +177,27 @@
             <a href="#panell-parades" data-target="panell-parades" id="subnav-parades">Paradas</a>
             <a href="#panell-actives" data-target="panell-actives" id="subnav-actives">Incidències actives</a>
             <a href="#panell-historic" data-target="panell-historic" id="subnav-historic">Històric</a>
+            <a href="#panell-consums" data-target="panell-consums" id="subnav-consums">Consums</a>
           </nav>
         </div>
 
         <div class="fitxa-scroll" id="fitxa-scroll">
         <div class="panell" id="panell-produccio">
           <h3 id="titol-produccio">Producció</h3>
+          <div class="subtabs" id="mode-periode-produccio">
+            <button type="button" class="nav-tab actiu" data-mode="avui" id="btn-mode-avui">Avui</button>
+            <button type="button" class="nav-tab" data-mode="periode" id="btn-mode-periode">Període</button>
+          </div>
+          <div id="bloc-periode-avui">
+            <div class="kpi-row">
+              <div class="kpi kpi-produccio"><div class="valor" id="kpi-avui-peces">-</div><div class="etiqueta" id="lbl-kpi-avui-peces">Peces bones</div></div>
+              <div class="kpi kpi-merma"><div class="valor" id="kpi-avui-merma">-</div><div class="etiqueta" id="lbl-kpi-avui-merma">Merma</div></div>
+              <div class="kpi kpi-actiu-wrap"><div class="valor" id="kpi-avui-actiu">-</div><div class="etiqueta" id="lbl-kpi-avui-actiu">Temps actiu</div></div>
+              <div class="kpi kpi-parat-wrap"><div class="valor" id="kpi-avui-parat">-</div><div class="etiqueta" id="lbl-kpi-avui-parat">Temps parat</div></div>
+              <div class="kpi kpi-oee-wrap"><div class="valor" id="kpi-avui-oee">-</div><div class="etiqueta" id="lbl-kpi-avui-oee">OEE</div></div>
+            </div>
+          </div>
+          <div id="bloc-periode-total" class="hidden">
           <div class="filtres-historic">
             <div>
               <label id="lbl-any">Any</label>
@@ -200,16 +215,15 @@
               <label id="lbl-referencia">Referència</label>
               <select id="filtre-referencia"></select>
             </div>
+            <div>
+              <label id="lbl-desde-p">Des de</label>
+              <input type="text" class="date-input" id="filtre-desde-p" readonly placeholder="dd/mm/aaaa">
+            </div>
+            <div>
+              <label id="lbl-fins-p">Fins a</label>
+              <input type="text" class="date-input" id="filtre-fins-p" readonly placeholder="dd/mm/aaaa">
+            </div>
           </div>
-          <div class="kpi-periode-label" id="lbl-periode-avui">Avui</div>
-          <div class="kpi-row">
-            <div class="kpi kpi-produccio"><div class="valor" id="kpi-avui-peces">-</div><div class="etiqueta" id="lbl-kpi-avui-peces">Peces bones</div></div>
-            <div class="kpi kpi-merma"><div class="valor" id="kpi-avui-merma">-</div><div class="etiqueta" id="lbl-kpi-avui-merma">Merma</div></div>
-            <div class="kpi kpi-actiu-wrap"><div class="valor" id="kpi-avui-actiu">-</div><div class="etiqueta" id="lbl-kpi-avui-actiu">Temps actiu</div></div>
-            <div class="kpi kpi-parat-wrap"><div class="valor" id="kpi-avui-parat">-</div><div class="etiqueta" id="lbl-kpi-avui-parat">Temps parat</div></div>
-            <div class="kpi kpi-oee-wrap"><div class="valor" id="kpi-avui-oee">-</div><div class="etiqueta" id="lbl-kpi-avui-oee">OEE</div></div>
-          </div>
-          <div class="kpi-periode-label" id="lbl-periode-total">Total (període filtrat)</div>
           <div id="resum-torns" class="kpi-row resum-torns hidden"></div>
           <div class="kpi-row">
             <div class="kpi kpi-produccio"><div class="valor" id="kpi-peces">-</div><div class="etiqueta" id="lbl-kpi-peces">Peces bones</div></div>
@@ -242,6 +256,7 @@
               </tr></thead>
               <tbody id="produccio-taula"></tbody>
             </table>
+          </div>
           </div>
         </div>
 
@@ -297,6 +312,25 @@
             </table>
           </div>
         </div>
+
+        <div class="panell" id="panell-consums">
+          <h3 id="titol-consums">Consums</h3>
+          <div class="subtabs" id="tipus-consum">
+            <button type="button" class="nav-tab actiu" data-tipus="aire" id="btn-consum-aire">Consum aire</button>
+            <button type="button" class="nav-tab" data-tipus="electric" id="btn-consum-electric">Consum elèctric</button>
+          </div>
+          <div class="filtres-historic">
+            <div>
+              <label id="lbl-desde-c">Des de</label>
+              <input type="text" class="date-input" id="filtre-desde-c" readonly placeholder="dd/mm/aaaa">
+            </div>
+            <div>
+              <label id="lbl-fins-c">Fins a</label>
+              <input type="text" class="date-input" id="filtre-fins-c" readonly placeholder="dd/mm/aaaa">
+            </div>
+          </div>
+          <div class="grafic-wrap"><canvas id="grafic-consums" height="90"></canvas></div>
+        </div>
         </div>
       </div>
     </main>
@@ -314,6 +348,8 @@
     let referenciaPoblat_ = false;
     let graficProduccio_ = null;
     let graficHistoric_ = null;
+    let graficConsums_ = null;
+    let tipusConsumActual_ = 'aire';
     let historicDiesActuals_ = [];
     let anysHistoricPoblats_ = false;
     let tooltipDiaTimeout_ = null;
@@ -336,11 +372,13 @@
         f_any: 'Any', f_mes: 'Mes', f_torn: 'Torn', f_tots: 'Tots', f_totes: 'Totes', f_referencia: 'Referència', f_filtrar: 'Filtrar',
         kpi_peces: 'Peces bones', kpi_merma: 'Merma', kpi_actiu: 'Temps actiu', kpi_parat: 'Temps parat', kpi_oee: 'OEE',
         periode_avui: 'Avui', periode_total: 'Total (període filtrat)',
+        mode_avui: 'Avui', mode_periode: 'Període',
         oee_disponibilitat: 'Disponibilitat', oee_qualitat: 'Qualitat',
         taula_dia: 'Dia', taula_pecesbones: 'Peces bones', taula_merma: 'Merma', taula_actiu: 'Actiu (min)',
         paradas_titol: 'Paradas del període', taula_inici: 'Inici', taula_fi: 'Fi', taula_durada: 'Durada (min)', taula_causa: 'Causa',
         incidencies_actives_titol: 'Incidències actives', incidencies_cap: 'Cap incidència activa',
         historic_titol: "Històric d'incidències", f_desde: 'Des de', f_finsA: 'Fins a',
+        consums_titol: 'Consums', consum_aire: 'Consum aire', consum_electric: 'Consum elèctric',
         taula_codi: 'Codi', taula_missatge: 'Missatge',
         buit_dades: 'Sense dades', buit_paradas: 'Sense paradas en aquest període', buit_incidencies: "Sense incidències en aquest període",
         admin_client: 'Client', admin_totsClients: 'Tots els clients', admin_cercar: 'Cercar per nom...', admin_cercarLbl: 'Cercar',
@@ -357,11 +395,13 @@
         f_any: 'Año', f_mes: 'Mes', f_torn: 'Turno', f_tots: 'Todos', f_totes: 'Todas', f_referencia: 'Referencia', f_filtrar: 'Filtrar',
         kpi_peces: 'Piezas buenas', kpi_merma: 'Merma', kpi_actiu: 'Tiempo activo', kpi_parat: 'Tiempo parado', kpi_oee: 'OEE',
         periode_avui: 'Hoy', periode_total: 'Total (período filtrado)',
+        mode_avui: 'Hoy', mode_periode: 'Período',
         oee_disponibilitat: 'Disponibilidad', oee_qualitat: 'Calidad',
         taula_dia: 'Día', taula_pecesbones: 'Piezas buenas', taula_merma: 'Merma', taula_actiu: 'Activo (min)',
         paradas_titol: 'Paradas del período', taula_inici: 'Inicio', taula_fi: 'Fin', taula_durada: 'Duración (min)', taula_causa: 'Causa',
         incidencies_actives_titol: 'Incidencias activas', incidencies_cap: 'Sin incidencias activas',
         historic_titol: 'Histórico de incidencias', f_desde: 'Desde', f_finsA: 'Hasta',
+        consums_titol: 'Consumos', consum_aire: 'Consumo aire', consum_electric: 'Consumo eléctrico',
         taula_codi: 'Código', taula_missatge: 'Mensaje',
         buit_dades: 'Sin datos', buit_paradas: 'Sin paradas en este período', buit_incidencies: 'Sin incidencias en este período',
         admin_client: 'Cliente', admin_totsClients: 'Todos los clientes', admin_cercar: 'Buscar por nombre...', admin_cercarLbl: 'Buscar',
@@ -378,11 +418,13 @@
         f_any: 'Year', f_mes: 'Month', f_torn: 'Shift', f_tots: 'All', f_totes: 'All', f_referencia: 'Reference', f_filtrar: 'Filter',
         kpi_peces: 'Good parts', kpi_merma: 'Scrap', kpi_actiu: 'Active time', kpi_parat: 'Stopped time', kpi_oee: 'OEE',
         periode_avui: 'Today', periode_total: 'Total (filtered period)',
+        mode_avui: 'Today', mode_periode: 'Period',
         oee_disponibilitat: 'Availability', oee_qualitat: 'Quality',
         taula_dia: 'Day', taula_pecesbones: 'Good parts', taula_merma: 'Scrap', taula_actiu: 'Active (min)',
         paradas_titol: 'Stops in period', taula_inici: 'Start', taula_fi: 'End', taula_durada: 'Duration (min)', taula_causa: 'Cause',
         incidencies_actives_titol: 'Active alerts', incidencies_cap: 'No active alerts',
         historic_titol: 'Alert history', f_desde: 'From', f_finsA: 'To',
+        consums_titol: 'Consumption', consum_aire: 'Air consumption', consum_electric: 'Electric consumption',
         taula_codi: 'Code', taula_missatge: 'Message',
         buit_dades: 'No data', buit_paradas: 'No stops in this period', buit_incidencies: 'No alerts in this period',
         admin_client: 'Client', admin_totsClients: 'All clients', admin_cercar: 'Search by name...', admin_cercarLbl: 'Search',
@@ -403,6 +445,12 @@
       document.getElementById('subnav-parades').textContent = t_('paradas_titol');
       document.getElementById('subnav-actives').textContent = t_('incidencies_actives_titol');
       document.getElementById('subnav-historic').textContent = t_('historic_titol');
+      document.getElementById('subnav-consums').textContent = t_('consums_titol');
+      document.getElementById('titol-consums').textContent = t_('consums_titol');
+      document.getElementById('btn-consum-aire').textContent = t_('consum_aire');
+      document.getElementById('btn-consum-electric').textContent = t_('consum_electric');
+      document.getElementById('lbl-desde-c').textContent = t_('f_desde');
+      document.getElementById('lbl-fins-c').textContent = t_('f_finsA');
       document.getElementById('lbl-any').textContent = t_('f_any');
       document.getElementById('lbl-mes').textContent = t_('f_mes');
       document.getElementById('lbl-referencia').textContent = t_('f_referencia');
@@ -412,8 +460,10 @@
       document.getElementById('lbl-kpi-actiu').textContent = t_('kpi_actiu');
       document.getElementById('lbl-kpi-parat').textContent = t_('kpi_parat');
       document.getElementById('lbl-kpi-oee').textContent = t_('kpi_oee');
-      document.getElementById('lbl-periode-avui').textContent = t_('periode_avui');
-      document.getElementById('lbl-periode-total').textContent = t_('periode_total');
+      document.getElementById('btn-mode-avui').textContent = t_('mode_avui');
+      document.getElementById('btn-mode-periode').textContent = t_('mode_periode');
+      document.getElementById('lbl-desde-p').textContent = t_('f_desde');
+      document.getElementById('lbl-fins-p').textContent = t_('f_finsA');
       document.getElementById('lbl-kpi-avui-peces').textContent = t_('kpi_peces');
       document.getElementById('lbl-kpi-avui-merma').textContent = t_('kpi_merma');
       document.getElementById('lbl-kpi-avui-actiu').textContent = t_('kpi_actiu');
@@ -1249,6 +1299,8 @@
       anysHistoricPoblats_ = false;
       document.getElementById('filtre-desde').value = '';
       document.getElementById('filtre-fins').value = '';
+      document.getElementById('filtre-desde-p').value = '';
+      document.getElementById('filtre-fins-p').value = '';
       document.getElementById('filtre-mes').value = String(new Date().getMonth() + 1);
       document.getElementById('filtre-mes-h').value = '';
       referenciaPoblat_ = false;
@@ -1257,6 +1309,11 @@
         .forEach(boto => boto.classList.remove('actiu'));
       document.querySelectorAll('#filtre-torn-h .filtre-torn-btn.actiu')
         .forEach(boto => boto.classList.remove('actiu'));
+      canviarModeProduccio_('avui');
+      tipusConsumActual_ = 'aire';
+      document.querySelectorAll('#tipus-consum .nav-tab').forEach(b => b.classList.toggle('actiu', b.dataset.tipus === 'aire'));
+      document.getElementById('filtre-desde-c').value = '';
+      document.getElementById('filtre-fins-c').value = '';
       document.getElementById('home-view').classList.add('hidden');
       document.getElementById('fitxa-view').classList.remove('hidden');
       const scrollBox = document.getElementById('fitxa-scroll');
@@ -1266,6 +1323,7 @@
       const cache = fitxaCache_[machineId];
       if (cache) { pintarFitxa(cache.fitxa); pintarProduccio(cache.produccio); }
       carregarDetallMaquina(machineId);
+      carregarConsums_();
       desarVistaActual_();
     }
 
@@ -1415,7 +1473,9 @@
       const mes = document.getElementById('filtre-mes').value || null;
       const torns = tornsSeleccionats_();
       const referencia = document.getElementById('filtre-referencia').value || null;
-      const clauCache = [maquinaActual, any || '', mes || '', torns.join(','), referencia || ''].join('|');
+      const dataInici = document.getElementById('filtre-desde-p').value || null;
+      const dataFi = document.getElementById('filtre-fins-p').value || null;
+      const clauCache = [maquinaActual, any || '', mes || '', torns.join(','), referencia || '', dataInici || '', dataFi || ''].join('|');
       if (canviDeTorns && produccioActual_) {
         renderGraficProduccio_(produccioActual_.perDia, produccioActual_.perDiaPerTorn || []);
         pintarResumTorns_(produccioActual_.perDiaPerTorn || []);
@@ -1430,7 +1490,7 @@
             pintarProduccio(dades);
           })
           .withFailureHandler(errorSessio_)
-          .getProduccio(token, maquinaActual, { any: any, mes: mes, torns: torns, referencia: referencia });
+          .getProduccio(token, maquinaActual, { any: any, mes: mes, torns: torns, referencia: referencia, dataInici: dataInici, dataFi: dataFi });
       }
     }
 
@@ -1444,6 +1504,55 @@
         .withSuccessHandler(pintarHistoric_)
         .withFailureHandler(errorSessio_)
         .getFitxaMaquina(token, maquinaActual, desde, fins, filtres);
+    }
+
+    function carregarConsums_() {
+      const dataInici = document.getElementById('filtre-desde-c').value || null;
+      const dataFi = document.getElementById('filtre-fins-c').value || null;
+      google.script.run
+        .withSuccessHandler(function (resposta) { renderGraficConsums_(JSON.parse(resposta)); })
+        .withFailureHandler(errorSessio_)
+        .getConsums(token, maquinaActual, tipusConsumActual_, dataInici, dataFi);
+    }
+
+    function renderGraficConsums_(dades) {
+      const ctx = document.getElementById('grafic-consums');
+      const etiquetesData = [...new Set([].concat(
+        dades.consumPerDia.map(d => d.data),
+        dades.produccioPerDia.map(d => d.data)
+      ))].sort();
+      const etiquetes = etiquetesData.map(formatarData_);
+      const consumPerData = {};
+      dades.consumPerDia.forEach(d => { consumPerData[d.data] = d.valor; });
+      const produccioPerData = {};
+      dades.produccioPerDia.forEach(d => { produccioPerData[d.data] = d.pecesBones; });
+      const etiquetaConsum = tipusConsumActual_ === 'electric' ? t_('consum_electric') : t_('consum_aire');
+      const datasets = [
+        { label: etiquetaConsum, data: etiquetesData.map(d => consumPerData[d] || 0), borderColor: '#4da3ff', backgroundColor: 'rgba(77,163,255,.12)', tension: .3, fill: true, pointRadius: 2, yAxisID: 'yConsum' },
+        { label: t_('kpi_peces'), data: etiquetesData.map(d => produccioPerData[d] || 0), borderColor: '#34d17a', backgroundColor: 'transparent', tension: .3, fill: false, pointRadius: 2, yAxisID: 'yProduccio' }
+      ];
+
+      if (graficConsums_) {
+        graficConsums_.data.labels = etiquetes;
+        graficConsums_.data.datasets = datasets;
+        graficConsums_.update();
+        return;
+      }
+      if (typeof Chart === 'undefined') return;
+      graficConsums_ = new Chart(ctx, {
+        type: 'line',
+        data: { labels: etiquetes, datasets: datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { display: true, labels: { color: '#8a95a5', usePointStyle: true, boxWidth: 8, boxHeight: 8 } } },
+          scales: {
+            x: { ticks: { color: '#8a95a5' }, grid: { color: '#2c343f' } },
+            yConsum: { position: 'left', ticks: { color: '#8a95a5' }, grid: { color: '#2c343f' }, beginAtZero: true },
+            yProduccio: { position: 'right', ticks: { color: '#8a95a5' }, grid: { display: false }, beginAtZero: true }
+          }
+        }
+      });
     }
 
     function pintarProduccio(p) {
@@ -1858,9 +1967,24 @@
     document.getElementById('filtre-admin-any').addEventListener('change', refiltrarMaquines_);
     document.getElementById('filtre-admin-text').addEventListener('input', refiltrarMaquines_);
 
+    function canviarModeProduccio_(mode) {
+      document.querySelectorAll('#mode-periode-produccio .nav-tab').forEach(b => b.classList.toggle('actiu', b.dataset.mode === mode));
+      document.getElementById('bloc-periode-avui').classList.toggle('hidden', mode !== 'avui');
+      document.getElementById('bloc-periode-total').classList.toggle('hidden', mode !== 'periode');
+    }
+    document.getElementById('mode-periode-produccio').addEventListener('click', function (event) {
+      const boto = event.target.closest('[data-mode]');
+      if (!boto) return;
+      canviarModeProduccio_(boto.dataset.mode);
+    });
+
     document.getElementById('filtre-any').addEventListener('change', carregarProduccio);
     document.getElementById('filtre-mes').addEventListener('change', carregarProduccio);
     document.getElementById('filtre-referencia').addEventListener('change', carregarProduccio);
+    document.getElementById('filtre-desde-p').addEventListener('click', function () { obrirDatePicker_(this); });
+    document.getElementById('filtre-fins-p').addEventListener('click', function () { obrirDatePicker_(this); });
+    document.getElementById('filtre-desde-p').addEventListener('change', carregarProduccio);
+    document.getElementById('filtre-fins-p').addEventListener('change', carregarProduccio);
     document.getElementById('filtre-torn').addEventListener('click', function (event) {
       const boto = event.target.closest('[data-torn]');
       if (!boto) return;
@@ -1878,6 +2002,18 @@
       boto.classList.toggle('actiu');
       carregarHistoric_();
     });
+
+    document.getElementById('tipus-consum').addEventListener('click', function (event) {
+      const boto = event.target.closest('[data-tipus]');
+      if (!boto) return;
+      tipusConsumActual_ = boto.dataset.tipus;
+      document.querySelectorAll('#tipus-consum .nav-tab').forEach(b => b.classList.toggle('actiu', b === boto));
+      carregarConsums_();
+    });
+    document.getElementById('filtre-desde-c').addEventListener('click', function () { obrirDatePicker_(this); });
+    document.getElementById('filtre-fins-c').addEventListener('click', function () { obrirDatePicker_(this); });
+    document.getElementById('filtre-desde-c').addEventListener('change', carregarConsums_);
+    document.getElementById('filtre-fins-c').addEventListener('change', carregarConsums_);
 
     document.getElementById('filtre-projectes-text').addEventListener('input', debounce_(pintarProjectesTaula_, 250));
   </script>
