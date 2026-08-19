@@ -755,6 +755,7 @@
   .control-pill svg { width: 14px; height: 14px; flex: none; }
   .control-pill:hover { border-color: rgba(77,163,255,.35); color: var(--text); }
   .control-pill.actiu { background: rgba(77,163,255,.16); border-color: var(--accent); color: var(--accent); }
+  #tipus-consum { margin-bottom: 20px; }
 
   .projecte-data { flex: 1; min-width: 0; }
   .projecte-data label {
