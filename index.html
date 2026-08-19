@@ -1,0 +1,1777 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MonitorMaquines</title>
+    <link rel="stylesheet" href="/original.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  </head>
+  <body>
+    <script src="/gas-bridge.js"></script>
+  <div id="login-view">
+    <div class="login-box">
+      <div class="login-logo-circle"><img src="https://i.imgur.com/9mcC7UG.png" alt="NEXA"></div>
+      <h1>Nexa Control</h1>
+      <span class="subtitle">Accés client</span>
+      <div class="error-msg" id="login-error"></div>
+      <div class="login-input-wrap">
+        <svg class="login-input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#8a95a5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <input type="text" id="login-email" placeholder="Nom d'usuari" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
+      </div>
+      <div class="login-input-wrap">
+        <svg class="login-input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#8a95a5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>
+        <input type="password" id="login-password" placeholder="Contrasenya" autocomplete="current-password" onkeydown="if(event.key==='Enter')ferLogin(this.closest('.login-box').querySelector('button[onclick]'))">
+        <button type="button" class="login-toggle-pw" id="toggle-pw" title="Mostrar contrasenya" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#8a95a5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <button onclick="ferLogin(this)">Entrar</button>
+    </div>
+  </div>
+  <script>try{if(localStorage.getItem('monitor_token')){document.getElementById('login-view').style.display='none';}}catch(e){}</script>
+
+  <script>
+  function _loginBtnTrace(btn) {
+    var ns = 'http://www.w3.org/2000/svg';
+    var svg = btn.querySelector('.btn-trace');
+    var r;
+    if (!svg) {
+      svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('class', 'btn-trace');
+      r = document.createElementNS(ns, 'rect');
+      svg.appendChild(r);
+      btn.appendChild(svg);
+    } else {
+      r = svg.querySelector('rect');
+    }
+    var w = btn.offsetWidth || 120, h = btn.offsetHeight || 36;
+    var bw = parseFloat(getComputedStyle(btn).borderTopWidth) || 0;
+    var rad = parseFloat(getComputedStyle(btn).borderTopLeftRadius) || 8;
+    var sw = 1.5;
+    svg.style.position = 'absolute';
+    svg.style.left = (-bw) + 'px';
+    svg.style.top  = (-bw) + 'px';
+    svg.style.setProperty('width',  w + 'px', 'important');
+    svg.style.setProperty('height', h + 'px', 'important');
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    r.setAttribute('x', sw / 2); r.setAttribute('y', sw / 2);
+    r.setAttribute('width', w - sw); r.setAttribute('height', h - sw);
+    r.setAttribute('rx', rad); r.setAttribute('ry', rad);
+    r.setAttribute('pathLength', '100');
+  }
+  function loginBtnStart(btn) {
+    if (typeof btn === 'string') btn = document.getElementById(btn);
+    if (!btn) return;
+    _loginBtnTrace(btn);
+    btn.classList.remove('done', 'error');
+    btn.classList.add('tracing');
+    btn.disabled = true;
+  }
+  function loginBtnDone(btn) {
+    if (typeof btn === 'string') btn = document.getElementById(btn);
+    if (!btn) return;
+    btn.classList.remove('tracing');
+    btn.classList.add('done');
+  }
+  function loginBtnError(btn) {
+    if (typeof btn === 'string') btn = document.getElementById(btn);
+    if (!btn) return;
+    _loginBtnTrace(btn);
+    btn.classList.remove('tracing', 'done');
+    btn.classList.add('error');
+    btn.disabled = false;
+    setTimeout(function(){ btn.classList.remove('error'); }, 1300);
+  }
+  </script>
+
+  <div id="app-view" class="hidden">
+    <div id="app-header">
+      <div class="header-left">
+        <span class="header-logo"><img src="https://i.imgur.com/9mcC7UG.png" alt="NEXA"></span>
+        <span class="client-name" id="nom-client"></span>
+        <nav id="admin-nav" class="hidden">
+          <button class="nav-tab actiu" id="nav-tab-maquines" onclick="mostrarVista_('maquines')">Màquines</button>
+          <button class="nav-tab" id="nav-tab-projectes" onclick="mostrarVista_('projectes')">Projectes ERP</button>
+          <button class="nav-tab" id="nav-tab-clients" onclick="mostrarVista_('clients')">Clients</button>
+        </nav>
+      </div>
+      <button onclick="ferLogout()" id="btn-sortir">Sortir</button>
+    </div>
+
+    <main>
+      <div id="app-error" class="error-msg" style="display:none;cursor:pointer;" title="Clica per tancar" onclick="this.style.display='none';"></div>
+
+      <div id="home-view">
+        <div id="admin-filtres" class="filtres-historic hidden">
+          <div>
+            <label id="lbl-admin-client">Client</label>
+            <select id="filtre-client"><option value="">Tots els clients</option></select>
+          </div>
+          <div>
+            <label id="lbl-admin-any">Any</label>
+            <select id="filtre-admin-any"><option value="">Tots</option></select>
+          </div>
+          <div style="flex:1;min-width:160px;">
+            <label id="lbl-admin-text">Cercar</label>
+            <input type="text" id="filtre-admin-text" placeholder="Cercar per nom...">
+          </div>
+        </div>
+        <div id="maquines-grid"></div>
+      </div>
+
+      <div id="projectes-view" class="hidden">
+        <div class="filtres-historic">
+          <div style="flex:1;min-width:160px;">
+            <label>Cercar</label>
+            <input type="text" id="filtre-projectes-text" placeholder="Cercar per projecte o client...">
+          </div>
+        </div>
+        <div id="projectes-grid"></div>
+
+        <div class="idioma-popup" id="idioma-popup">
+          <button type="button" class="idioma-opt" data-idioma="ca" title="Català"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Catalonia.svg" alt="CA"></button>
+          <button type="button" class="idioma-opt" data-idioma="es" title="Español"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Spain.svg" alt="ES"></button>
+          <button type="button" class="idioma-opt" data-idioma="en" title="English"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_the_United_Kingdom.svg" alt="EN"></button>
+        </div>
+      </div>
+
+      <div class="date-popup" id="date-popup">
+        <div class="date-popup-head">
+          <button type="button" id="date-prev">‹</button>
+          <span id="date-month-label"></span>
+          <button type="button" id="date-next">›</button>
+        </div>
+        <div class="date-popup-dow">
+          <span>Dl</span><span>Dt</span><span>Dc</span><span>Dj</span><span>Dv</span><span>Ds</span><span>Dg</span>
+        </div>
+        <div class="date-popup-days" id="date-popup-days"></div>
+        <div class="date-popup-foot">
+          <button type="button" id="date-avui">Avui</button>
+          <button type="button" id="date-clear">Esborrar</button>
+        </div>
+      </div>
+
+      <div id="clients-view" class="hidden">
+        <div id="clients-grid"></div>
+      </div>
+
+      <div id="fitxa-view" class="hidden">
+        <span class="back-link" id="fitxa-back-link" onclick="tornarHome()">&larr; Totes les màquines</span>
+
+        <div class="fitxa-sticky" id="fitxa-sticky">
+          <div class="fitxa-header">
+            <div class="img-placeholder" id="fitxa-img">Sense imatge</div>
+            <div>
+              <h2 id="fitxa-nom"></h2>
+              <span class="estat-badge" id="fitxa-estat"></span>
+            </div>
+          </div>
+
+          <nav class="fitxa-subnav" id="fitxa-subnav">
+            <a href="#panell-produccio" data-target="panell-produccio" id="subnav-produccio">Producció</a>
+            <a href="#panell-parades" data-target="panell-parades" id="subnav-parades">Paradas</a>
+            <a href="#panell-actives" data-target="panell-actives" id="subnav-actives">Incidències actives</a>
+            <a href="#panell-historic" data-target="panell-historic" id="subnav-historic">Històric</a>
+          </nav>
+        </div>
+
+        <div class="fitxa-scroll" id="fitxa-scroll">
+        <div class="panell" id="panell-produccio">
+          <h3 id="titol-produccio">Producció</h3>
+          <div class="filtres-historic">
+            <div>
+              <label id="lbl-any">Any</label>
+              <select id="filtre-any"></select>
+            </div>
+            <div>
+              <label id="lbl-mes">Mes</label>
+              <select id="filtre-mes"></select>
+            </div>
+            <div>
+              <label id="lbl-torn">Torn</label>
+              <div id="filtre-torn" class="filtres-torn" role="group"></div>
+            </div>
+            <div id="filtre-referencia-wrap" class="hidden">
+              <label id="lbl-referencia">Referència</label>
+              <select id="filtre-referencia"></select>
+            </div>
+          </div>
+          <div id="resum-torns" class="kpi-row resum-torns hidden"></div>
+          <div class="kpi-row">
+            <div class="kpi kpi-produccio"><div class="valor" id="kpi-peces">-</div><div class="etiqueta" id="lbl-kpi-peces">Peces bones</div></div>
+            <div class="kpi kpi-merma"><div class="valor" id="kpi-merma">-</div><div class="etiqueta" id="lbl-kpi-merma">Merma</div></div>
+            <div class="kpi kpi-actiu-wrap"><div class="valor" id="kpi-actiu">-</div><div class="etiqueta" id="lbl-kpi-actiu">Temps actiu (min)</div></div>
+            <div class="kpi kpi-parat-wrap"><div class="valor" id="kpi-parat">-</div><div class="etiqueta" id="lbl-kpi-parat">Temps parat (min)</div></div>
+            <div class="kpi kpi-oee-wrap" tabindex="0">
+              <div class="kpi-oee-border"><span></span><span></span></div>
+              <div class="valor" id="kpi-oee">-</div><div class="etiqueta" id="lbl-kpi-oee">OEE</div>
+              <div class="oee-popover" id="oee-popover">
+                <svg viewBox="0 0 100 100" width="160" height="160">
+                  <circle class="oee-track" cx="50" cy="50" r="40" stroke-dasharray="188.5 62.83"></circle>
+                  <circle class="oee-arc oee-arc-disp" id="oee-arc-disp" cx="50" cy="50" r="40"></circle>
+                  <circle class="oee-track" cx="50" cy="50" r="30" stroke-dasharray="141.37 47.12"></circle>
+                  <circle class="oee-arc oee-arc-qual" id="oee-arc-qual" cx="50" cy="50" r="30"></circle>
+                  <text x="50" y="55" text-anchor="middle" class="oee-center" id="oee-center-text">-</text>
+                </svg>
+                <div class="oee-legend">
+                  <div><i class="oee-dot disp"></i><span id="oee-leg-lbl-disp">Disponibilitat</span><b id="oee-leg-disp">-</b></div>
+                  <div><i class="oee-dot qual"></i><span id="oee-leg-lbl-qual">Qualitat</span><b id="oee-leg-qual">-</b></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="grafic-wrap"><canvas id="grafic-produccio" height="90"></canvas></div>
+          <div class="taula-scroll">
+            <table>
+              <thead><tr>
+                <th id="th-dia">Dia</th><th id="th-referencia" class="hidden">Referència</th><th id="th-pecesbones">Peces bones</th><th id="th-merma">Merma</th><th id="th-actiu">Actiu (min)</th>
+              </tr></thead>
+              <tbody id="produccio-taula"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panell" id="panell-parades">
+          <h3 id="titol-parades">Paradas del període</h3>
+          <div class="taula-scroll">
+            <table>
+              <thead><tr>
+                <th id="th-inici">Inici</th><th id="th-fi">Fi</th><th id="th-durada">Durada (min)</th><th id="th-causa">Causa</th>
+              </tr></thead>
+              <tbody id="parades-taula"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panell" id="panell-actives">
+          <h3 id="titol-actives">Incidències actives</h3>
+          <div id="incidencies-actives"></div>
+        </div>
+
+        <div class="panell" id="panell-historic">
+          <h3 id="titol-historic">Històric d'incidències</h3>
+          <div class="filtres-historic">
+            <div>
+              <label id="lbl-any-h">Any</label>
+              <select id="filtre-any-h"></select>
+            </div>
+            <div>
+              <label id="lbl-mes-h">Mes</label>
+              <select id="filtre-mes-h"></select>
+            </div>
+            <div>
+              <label id="lbl-torn-h">Torn</label>
+              <div id="filtre-torn-h" class="filtres-torn" role="group"></div>
+            </div>
+            <div>
+              <label id="lbl-desde">Des de</label>
+              <input type="text" class="date-input" id="filtre-desde" readonly placeholder="dd/mm/aaaa">
+            </div>
+            <div>
+              <label id="lbl-fins">Fins a</label>
+              <input type="text" class="date-input" id="filtre-fins" readonly placeholder="dd/mm/aaaa">
+            </div>
+          </div>
+          <div class="kpi-row" id="historic-alarmes-frequents"></div>
+          <div class="grafic-wrap"><canvas id="grafic-historic" height="90"></canvas></div>
+          <div class="taula-scroll">
+            <table>
+              <thead><tr>
+                <th id="th-codi">Codi</th><th id="th-missatge">Missatge</th><th id="th-torn-hist">Torn</th><th id="th-inici2">Inici</th><th id="th-fi2">Fi</th>
+              </tr></thead>
+              <tbody id="historic-taula"></tbody>
+            </table>
+          </div>
+        </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let token = null;
+    let maquinaActual = null;
+    let esAdmin_ = false;
+    let idioma_ = 'ca';
+    const COLORS_TORN_ = { 'Matí': '#f6c453', 'Tarda': '#4da3ff', 'Nit': '#b582f8' };
+    const TOTS_TORNS_ = ['Matí', 'Tarda', 'Nit'];
+    let tornsClientActual_ = TOTS_TORNS_;
+    let mostrarReferenciaActual_ = false;
+    let referenciaPoblat_ = false;
+    let graficProduccio_ = null;
+    let graficHistoric_ = null;
+    let historicDiesActuals_ = [];
+    let anysHistoricPoblats_ = false;
+    let tooltipDiaTimeout_ = null;
+    let filtresAdminCarregats_ = false;
+    let vistaActual_ = 'maquines';
+    let maquinesCache_ = null;
+    let fitxaCache_ = {};
+    let produccioCache_ = {};
+    let produccioActual_ = null;
+    let versioClient_ = null;
+    let pollIntervalId_ = null;
+
+    const DICC = {
+      ca: {
+        sortir: 'Sortir', totesMaquines: 'Totes les màquines', senseImatge: 'Sense imatge',
+        estat_marxa: 'En marxa', estat_alarma: 'En alarma', estat_parada: 'Parada', estat_incomunicada: 'Incomunicada', estat_desactivada: 'Desactivada',
+        barra_produccio: 'Producció', barra_alarma: 'Alarma', barra_parada: 'Parada',
+        produccio_titol: 'Producció',
+        f_any: 'Any', f_mes: 'Mes', f_torn: 'Torn', f_tots: 'Tots', f_totes: 'Totes', f_referencia: 'Referència', f_filtrar: 'Filtrar',
+        kpi_peces: 'Peces bones', kpi_merma: 'Merma', kpi_actiu: 'Temps actiu', kpi_parat: 'Temps parat', kpi_oee: 'OEE',
+        oee_disponibilitat: 'Disponibilitat', oee_qualitat: 'Qualitat',
+        taula_dia: 'Dia', taula_pecesbones: 'Peces bones', taula_merma: 'Merma', taula_actiu: 'Actiu (min)',
+        paradas_titol: 'Paradas del període', taula_inici: 'Inici', taula_fi: 'Fi', taula_durada: 'Durada (min)', taula_causa: 'Causa',
+        incidencies_actives_titol: 'Incidències actives', incidencies_cap: 'Cap incidència activa',
+        historic_titol: "Històric d'incidències", f_desde: 'Des de', f_finsA: 'Fins a',
+        taula_codi: 'Codi', taula_missatge: 'Missatge',
+        buit_dades: 'Sense dades', buit_paradas: 'Sense paradas en aquest període', buit_incidencies: "Sense incidències en aquest període",
+        admin_client: 'Client', admin_totsClients: 'Tots els clients', admin_cercar: 'Cercar per nom...', admin_cercarLbl: 'Cercar',
+        desde_h: 'des de', alarma_frequent: 'Alarma més freqüent',
+        torns: { 'Matí': 'Matí', 'Tarda': 'Tarda', 'Nit': 'Nit' },
+        mesos: ['Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny', 'Juliol', 'Agost', 'Setembre', 'Octubre', 'Novembre', 'Desembre']
+      },
+      es: {
+        sortir: 'Salir', totesMaquines: 'Todas las máquinas', senseImatge: 'Sin imagen',
+        estat_marxa: 'En marcha', estat_alarma: 'En alarma', estat_parada: 'Parada', estat_incomunicada: 'Incomunicada', estat_desactivada: 'Desactivada',
+        barra_produccio: 'Producción', barra_alarma: 'Alarma', barra_parada: 'Parada',
+        produccio_titol: 'Producción',
+        f_any: 'Año', f_mes: 'Mes', f_torn: 'Turno', f_tots: 'Todos', f_totes: 'Todas', f_referencia: 'Referencia', f_filtrar: 'Filtrar',
+        kpi_peces: 'Piezas buenas', kpi_merma: 'Merma', kpi_actiu: 'Tiempo activo', kpi_parat: 'Tiempo parado', kpi_oee: 'OEE',
+        oee_disponibilitat: 'Disponibilidad', oee_qualitat: 'Calidad',
+        taula_dia: 'Día', taula_pecesbones: 'Piezas buenas', taula_merma: 'Merma', taula_actiu: 'Activo (min)',
+        paradas_titol: 'Paradas del período', taula_inici: 'Inicio', taula_fi: 'Fin', taula_durada: 'Duración (min)', taula_causa: 'Causa',
+        incidencies_actives_titol: 'Incidencias activas', incidencies_cap: 'Sin incidencias activas',
+        historic_titol: 'Histórico de incidencias', f_desde: 'Desde', f_finsA: 'Hasta',
+        taula_codi: 'Código', taula_missatge: 'Mensaje',
+        buit_dades: 'Sin datos', buit_paradas: 'Sin paradas en este período', buit_incidencies: 'Sin incidencias en este período',
+        admin_client: 'Cliente', admin_totsClients: 'Todos los clientes', admin_cercar: 'Buscar por nombre...', admin_cercarLbl: 'Buscar',
+        desde_h: 'desde', alarma_frequent: 'Alarma más frecuente',
+        torns: { 'Matí': 'Mañana', 'Tarda': 'Tarde', 'Nit': 'Noche' },
+        mesos: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+      },
+      en: {
+        sortir: 'Sign out', totesMaquines: 'All machines', senseImatge: 'No image',
+        estat_marxa: 'Running', estat_alarma: 'Alarm', estat_parada: 'Stopped', estat_incomunicada: 'Offline', estat_desactivada: 'Disabled',
+        barra_produccio: 'Production', barra_alarma: 'Alarm', barra_parada: 'Stopped',
+        produccio_titol: 'Production',
+        f_any: 'Year', f_mes: 'Month', f_torn: 'Shift', f_tots: 'All', f_totes: 'All', f_referencia: 'Reference', f_filtrar: 'Filter',
+        kpi_peces: 'Good parts', kpi_merma: 'Scrap', kpi_actiu: 'Active time', kpi_parat: 'Stopped time', kpi_oee: 'OEE',
+        oee_disponibilitat: 'Availability', oee_qualitat: 'Quality',
+        taula_dia: 'Day', taula_pecesbones: 'Good parts', taula_merma: 'Scrap', taula_actiu: 'Active (min)',
+        paradas_titol: 'Stops in period', taula_inici: 'Start', taula_fi: 'End', taula_durada: 'Duration (min)', taula_causa: 'Cause',
+        incidencies_actives_titol: 'Active alerts', incidencies_cap: 'No active alerts',
+        historic_titol: 'Alert history', f_desde: 'From', f_finsA: 'To',
+        taula_codi: 'Code', taula_missatge: 'Message',
+        buit_dades: 'No data', buit_paradas: 'No stops in this period', buit_incidencies: 'No alerts in this period',
+        admin_client: 'Client', admin_totsClients: 'All clients', admin_cercar: 'Search by name...', admin_cercarLbl: 'Search',
+        desde_h: 'since', alarma_frequent: 'Most frequent alert',
+        torns: { 'Matí': 'Morning', 'Tarda': 'Afternoon', 'Nit': 'Night' },
+        mesos: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+      }
+    };
+
+    function t_(key) { return (DICC[idioma_] && DICC[idioma_][key]) || DICC.ca[key] || key; }
+
+    function aplicarIdioma_() {
+      pintarAlarmesFrequents_();
+      document.getElementById('btn-sortir').textContent = t_('sortir');
+      document.getElementById('fitxa-back-link').innerHTML = '&larr; ' + t_('totesMaquines');
+      document.getElementById('titol-produccio').textContent = t_('produccio_titol');
+      document.getElementById('subnav-produccio').textContent = t_('produccio_titol');
+      document.getElementById('subnav-parades').textContent = t_('paradas_titol');
+      document.getElementById('subnav-actives').textContent = t_('incidencies_actives_titol');
+      document.getElementById('subnav-historic').textContent = t_('historic_titol');
+      document.getElementById('lbl-any').textContent = t_('f_any');
+      document.getElementById('lbl-mes').textContent = t_('f_mes');
+      document.getElementById('lbl-referencia').textContent = t_('f_referencia');
+      document.getElementById('lbl-torn').textContent = t_('f_torn');
+      document.getElementById('lbl-kpi-peces').textContent = t_('kpi_peces');
+      document.getElementById('lbl-kpi-merma').textContent = t_('kpi_merma');
+      document.getElementById('lbl-kpi-actiu').textContent = t_('kpi_actiu');
+      document.getElementById('lbl-kpi-parat').textContent = t_('kpi_parat');
+      document.getElementById('lbl-kpi-oee').textContent = t_('kpi_oee');
+      document.getElementById('oee-leg-lbl-disp').textContent = t_('oee_disponibilitat');
+      document.getElementById('oee-leg-lbl-qual').textContent = t_('oee_qualitat');
+      document.getElementById('th-dia').textContent = t_('taula_dia');
+      document.getElementById('th-referencia').textContent = t_('f_referencia');
+      document.getElementById('th-pecesbones').textContent = t_('taula_pecesbones');
+      document.getElementById('th-merma').textContent = t_('taula_merma');
+      document.getElementById('th-actiu').textContent = t_('taula_actiu');
+      document.getElementById('titol-parades').textContent = t_('paradas_titol');
+      document.getElementById('th-inici').textContent = t_('taula_inici');
+      document.getElementById('th-fi').textContent = t_('taula_fi');
+      document.getElementById('th-durada').textContent = t_('taula_durada');
+      document.getElementById('th-causa').textContent = t_('taula_causa');
+      document.getElementById('titol-actives').textContent = t_('incidencies_actives_titol');
+      document.getElementById('titol-historic').textContent = t_('historic_titol');
+      document.getElementById('lbl-desde').textContent = t_('f_desde');
+      document.getElementById('lbl-fins').textContent = t_('f_finsA');
+      document.getElementById('th-codi').textContent = t_('taula_codi');
+      document.getElementById('th-missatge').textContent = t_('taula_missatge');
+      document.getElementById('th-inici2').textContent = t_('taula_inici');
+      document.getElementById('th-fi2').textContent = t_('taula_fi');
+      document.getElementById('th-torn-hist').textContent = t_('f_torn');
+      document.getElementById('lbl-admin-client').textContent = t_('admin_client');
+      document.getElementById('lbl-admin-any').textContent = t_('f_any');
+      document.getElementById('lbl-admin-text').textContent = t_('admin_cercarLbl');
+      document.getElementById('filtre-admin-text').placeholder = t_('admin_cercar');
+
+      const selMes = document.getElementById('filtre-mes');
+      const mesActual = selMes.value;
+      selMes.innerHTML = '<option value="">' + t_('f_tots') + '</option>' +
+        t_('mesos').map((nom, i) => `<option value="${i + 1}">${nom}</option>`).join('');
+      selMes.value = mesActual;
+
+      const selTorn = document.getElementById('filtre-torn');
+      const tornsActius = tornsSeleccionats_();
+      const torns = DICC[idioma_].torns;
+      selTorn.innerHTML = tornsClientActual_.map(v =>
+        `<button type="button" class="filtre-torn-btn${tornsActius.indexOf(v) !== -1 ? ' actiu' : ''}" data-torn="${v}">${torns[v]}</button>`
+      ).join('');
+
+      document.getElementById('lbl-any-h').textContent = t_('f_any');
+      document.getElementById('lbl-mes-h').textContent = t_('f_mes');
+      document.getElementById('lbl-torn-h').textContent = t_('f_torn');
+      const selMesH = document.getElementById('filtre-mes-h');
+      const mesActualH = selMesH.value;
+      selMesH.innerHTML = '<option value="">' + t_('f_tots') + '</option>' +
+        t_('mesos').map((nom, i) => `<option value="${i + 1}">${nom}</option>`).join('');
+      selMesH.value = mesActualH;
+
+      const selTornH = document.getElementById('filtre-torn-h');
+      const tornsActiusH = tornsSeleccionatsHistoric_();
+      selTornH.innerHTML = tornsClientActual_.map(v =>
+        `<button type="button" class="filtre-torn-btn${tornsActiusH.indexOf(v) !== -1 ? ' actiu' : ''}" data-torn="${v}">${torns[v]}</button>`
+      ).join('');
+    }
+
+    function ferLogin(btn) {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      document.getElementById('login-error').textContent = '';
+      loginBtnStart(btn);
+
+      google.script.run
+        .withSuccessHandler(function (resp) {
+          try { localStorage.setItem('monitor_email', email); } catch (e) {}
+          loginBtnDone(btn);
+          setTimeout(function () { entrarApp_(resp, true); }, 200);
+        })
+        .withFailureHandler(function (err) {
+          loginBtnError(btn);
+          document.getElementById('login-error').textContent = err.message;
+          var caixa = document.querySelector('.login-box');
+          caixa.classList.remove('shake');
+          void caixa.offsetWidth; // força reflow perquè es pugui repetir l'animació en errors consecutius
+          caixa.classList.add('shake');
+        })
+        .login(email, password);
+    }
+
+    function entrarApp_(resp, esNovaSessio) {
+      token = resp.token;
+      esAdmin_ = resp.rol === 'admin';
+      idioma_ = resp.idioma || 'ca';
+      try { localStorage.setItem('monitor_token', token); } catch (e) {}
+      var errPrevi = document.getElementById('app-error');
+      errPrevi.style.display = 'none';
+      errPrevi.textContent = '';
+      document.getElementById('nom-client').textContent = resp.nomClient;
+      document.getElementById('login-view').classList.add('hidden');
+      document.getElementById('app-view').classList.remove('hidden');
+      document.getElementById('admin-filtres').classList.toggle('hidden', !esAdmin_);
+      document.getElementById('admin-nav').classList.toggle('hidden', !esAdmin_);
+      aplicarIdioma_();
+      if (esAdmin_) carregarFiltresAdmin_();
+      carregarMaquines();
+      iniciarPollVersio_();
+      if (esAdmin_) precarregarPestanyesAdmin_();
+      if (esAdmin_) { google.script.run.withSuccessHandler(function () {}).withFailureHandler(function () {}).simularDadesClient_temp('TECAN'); }
+      if (esAdmin_) { google.script.run.withSuccessHandler(function () {}).withFailureHandler(function () {}).simularHistoricIncidencies_temp('TECAN'); }
+      if (esNovaSessio) { try { localStorage.removeItem('monitor_vista'); } catch (e) {} }
+      else restaurarVistaActual_();
+    }
+
+    // Omple projectesErpCache_/clientsFacturacioCache_ en silenci just després
+    // del login perquè, quan l'usuari obri aquelles pestanyes (encara que
+    // sigui minuts després), ja hi hagi dades i no calgui mostrar esquelet.
+    function precarregarPestanyesAdmin_() {
+      google.script.run
+        .withSuccessHandler(function (projectes) { projectesErpCache_ = projectes; if (vistaActual_ === 'projectes') pintarProjectesTaula_(); })
+        .withFailureHandler(function () {})
+        .getProjectesErp(token);
+      google.script.run
+        .withSuccessHandler(function (clients) { clientsFacturacioCache_ = clients; if (vistaActual_ === 'clients') pintarClientsGrid_(); })
+        .withFailureHandler(function () {})
+        .getClientsFacturacio(token);
+    }
+
+    function mostrarVista_(vista) {
+      vistaActual_ = vista;
+      document.getElementById('nav-tab-maquines').classList.toggle('actiu', vista === 'maquines');
+      document.getElementById('nav-tab-projectes').classList.toggle('actiu', vista === 'projectes');
+      document.getElementById('nav-tab-clients').classList.toggle('actiu', vista === 'clients');
+      document.getElementById('home-view').classList.toggle('hidden', vista !== 'maquines');
+      document.getElementById('fitxa-view').classList.add('hidden');
+      document.getElementById('projectes-view').classList.toggle('hidden', vista !== 'projectes');
+      document.getElementById('clients-view').classList.toggle('hidden', vista !== 'clients');
+      // silenciós=true: si ja hi ha dades en cache d'una visita anterior es
+      // pinten a l'instant i la crida real només les substitueix si han canviat.
+      if (vista === 'maquines') carregarMaquines(true);
+      if (vista === 'projectes') carregarProjectesErp(true);
+      if (vista === 'clients') carregarClientsFacturacio_(true);
+      desarVistaActual_();
+    }
+
+    // Poll lleuger: compara la marca de temps de l'últim canvi al full (via
+    // Drive, cobreix tant escriptures de la webapp com edicions manuals) i
+    // si ha canviat, refresca en silenci la vista que l'usuari té oberta.
+    function iniciarPollVersio_() {
+      if (pollIntervalId_) clearInterval(pollIntervalId_);
+      pollIntervalId_ = setInterval(function () {
+        if (!token) return;
+        google.script.run
+          .withSuccessHandler(function (v) {
+            if (versioClient_ !== null && v > versioClient_) refrescarVistaActual_();
+            versioClient_ = v;
+          })
+          .withFailureHandler(function () {})
+          .versioDades(token);
+      }, 2000);
+    }
+
+    function refrescarVistaActual_() {
+      if (maquinaActual) { carregarDetallMaquina(maquinaActual); return; }
+      if (vistaActual_ === 'maquines') carregarMaquines(true);
+      if (vistaActual_ === 'projectes') carregarProjectesErp(true);
+      if (vistaActual_ === 'clients') carregarClientsFacturacio_(true);
+    }
+
+    function ferLogout() {
+      google.script.run.logout(token);
+      token = null;
+      if (pollIntervalId_) { clearInterval(pollIntervalId_); pollIntervalId_ = null; }
+      versioClient_ = null;
+      try { localStorage.removeItem('monitor_token'); } catch (e) {}
+      document.getElementById('app-view').classList.add('hidden');
+      document.getElementById('login-view').classList.remove('hidden');
+      document.getElementById('login-view').style.display = '';
+      document.getElementById('login-email').value = '';
+      document.getElementById('login-password').value = '';
+      var loginBtn = document.querySelector('.login-box > button');
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.classList.remove('done', 'tracing', 'error');
+      }
+    }
+
+    document.getElementById('toggle-pw').addEventListener('click', function () {
+      const input = document.getElementById('login-password');
+      const mostrant = input.type === 'text';
+      input.type = mostrant ? 'password' : 'text';
+      this.classList.toggle('showing', !mostrant);
+    });
+
+    // Preomple l'email recordat (mai la contrasenya)
+    try {
+      const emailDesat = localStorage.getItem('monitor_email');
+      if (emailDesat) document.getElementById('login-email').value = emailDesat;
+    } catch (e) {}
+
+    // Al carregar la pàgina: si hi ha un token guardat, intenta continuar la sessió sense demanar login
+    (function recuperarSessio_() {
+      let desat = null;
+      try { desat = localStorage.getItem('monitor_token'); } catch (e) {}
+      if (!desat) return;
+      token = desat;
+      google.script.run
+        .withSuccessHandler(function (resp) {
+          entrarApp_(resp);
+        })
+        .withFailureHandler(function () {
+          token = null;
+          try { localStorage.removeItem('monitor_token'); } catch (e) {}
+          document.getElementById('login-view').style.display = '';
+        })
+        .getSessioActual(desat);
+    })();
+
+    let clientsAdminCache_ = [];
+
+    function carregarFiltresAdmin_() {
+      if (filtresAdminCarregats_) return;
+      google.script.run
+        .withSuccessHandler(function (dades) {
+          filtresAdminCarregats_ = true;
+          clientsAdminCache_ = dades.clients;
+          const selClient = document.getElementById('filtre-client');
+          selClient.innerHTML = '<option value="">' + t_('admin_totsClients') + '</option>' +
+            dades.clients.map(c => `<option value="${c.tenantId}">${c.nom}</option>`).join('');
+          const selAny = document.getElementById('filtre-admin-any');
+          selAny.innerHTML = '<option value="">' + t_('f_tots') + '</option>' +
+            dades.anys.map(a => `<option value="${a}">${a}</option>`).join('');
+        })
+        .withFailureHandler(errorSessio_)
+        .getFiltresAdmin(token);
+    }
+
+    let projectesErpCache_ = [];
+
+    function carregarProjectesErp(silenciós) {
+      if (silenciós && projectesErpCache_.length) {
+        pintarProjectesTaula_();
+      } else {
+        pintarEsquelet_('projectes-grid', 170);
+      }
+      google.script.run
+        .withSuccessHandler(function (projectes) {
+          const igual = projectesErpCache_.length && JSON.stringify(projectes) === JSON.stringify(projectesErpCache_);
+          projectesErpCache_ = projectes;
+          if (!igual) pintarProjectesTaula_();
+        })
+        .withFailureHandler(errorSessio_)
+        .getProjectesErp(token);
+    }
+
+    function escHtml_(text) {
+      return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function pintarEsquelet_(containerId, alturaPx) {
+      const el = document.getElementById(containerId);
+      el.innerHTML = Array.from({ length: 4 }).map(() =>
+        `<div class="skeleton-card" style="height:${alturaPx}px"></div>`).join('');
+    }
+
+    const _BASE_BANDERA = 'https://commons.wikimedia.org/wiki/' + 'Special:FilePath/';
+    const BANDERES = {
+      ca: _BASE_BANDERA + 'Flag_of_Catalonia.svg',
+      es: _BASE_BANDERA + 'Flag_of_Spain.svg',
+      en: _BASE_BANDERA + 'Flag_of_the_United_Kingdom.svg'
+    };
+    function banderaUrl_(idioma) { return BANDERES[idioma] || BANDERES.ca; }
+
+    let projectesJaAnimat_ = false;
+
+    function pintarProjectesTaula_() {
+      const q = (document.getElementById('filtre-projectes-text').value || '').trim().toLowerCase();
+      const files = projectesErpCache_.filter(p =>
+        !q || p.descripcio.toLowerCase().includes(q) || p.client.toLowerCase().includes(q) || p.id.toLowerCase().includes(q));
+
+      const grid = document.getElementById('projectes-grid');
+      grid.classList.toggle('ja-animat', projectesJaAnimat_);
+      projectesJaAnimat_ = true;
+      grid.innerHTML = files.map(p => `
+        <div class="projecte-card${p.nexaControlSuspes ? ' suspes' : ''}">
+          <div class="projecte-top">
+            <div class="projecte-info">
+              <div class="client-tag">${escHtml_(p.client)}</div>
+              <div class="projecte-nom">${escHtml_(p.id)} — ${escHtml_(p.descripcio)}</div>
+            </div>
+            ${p.nexaControlSuspes ? '<span class="chip-suspes">Desactivat</span>' : (p.nexaControlActiu ? '<span class="chip-nexacontrol">NexaControl</span>' : '')}
+          </div>
+          <div class="projecte-bottom">
+            ${p.nexaControlActiu ? `
+              <div class="projecte-camps">
+                <div class="projecte-data">
+                  <label>Implementació a fàbrica</label>
+                  <input type="text" class="date-input input-data-implementacio" data-id="${escHtml_(p.id)}" readonly placeholder="dd/mm/aaaa" value="${p.dataImplementacio ? p.dataImplementacio.substring(0, 10) : ''}">
+                </div>
+                <div class="projecte-data">
+                  <label>Plus (€)</label>
+                  <input type="number" min="0" step="0.01" class="input-preu-plus" data-id="${escHtml_(p.id)}" value="${p.preuPlus || 0}">
+                </div>
+              </div>
+              <div class="projecte-botons">
+                <button class="btn btn-toggle-actiu${p.nexaControlSuspes ? ' btn-reactivar' : ' btn-suspendre'}" data-id="${escHtml_(p.id)}" data-actiu="${p.nexaControlSuspes ? 'true' : 'false'}">
+                  ${p.nexaControlSuspes ? 'Reactivar' : 'Suspendre'}
+                </button>
+                <button class="btn btn-toggle-visible${p.visibleClient === false ? ' btn-mostrar' : ' btn-amagar'}" data-id="${escHtml_(p.id)}" data-visible="${p.visibleClient === false ? 'true' : 'false'}">
+                  ${p.visibleClient === false ? 'Fer visible al client' : 'Amagar al client (posta en marxa)'}
+                </button>
+                <button class="btn btn-toggle-ref${p.mostrarReferencia ? ' btn-amagar' : ' btn-mostrar'}" data-id="${escHtml_(p.id)}" data-mostrar="${p.mostrarReferencia ? 'false' : 'true'}">
+                  ${p.mostrarReferencia ? 'Amagar filtre de referència' : 'Mostrar filtre de referència'}
+                </button>
+              </div>
+              <div class="client-card-torns">
+                <label>Torns</label>
+                <div class="torns-chips" data-id="${escHtml_(p.id)}">
+                  ${TOTS_TORNS_.map(torn => `
+                    <button type="button" class="torn-chip${p.torns.indexOf(torn) !== -1 ? ' actiu' : ''}" data-torn="${torn}">${DICC[idioma_].torns[torn]}</button>
+                  `).join('')}
+                </div>
+              </div>
+            ` : `
+              <div class="projecte-camps">
+                <div class="projecte-data">
+                  <label>Plus (€)</label>
+                  <input type="number" min="0" step="0.01" class="input-preu-nou" placeholder="0,00">
+                </div>
+              </div>
+              <button class="btn btn-activar" data-id="${escHtml_(p.id)}" data-desc="${escHtml_(p.descripcio)}" data-client="${escHtml_(p.client)}">Activar</button>
+            `}
+          </div>
+        </div>`).join('') || `<div class="empty-state">${t_('buit_dades')}</div>`;
+    }
+
+    document.getElementById('projectes-grid').addEventListener('click', function (e) {
+      const btnActivar = e.target.closest('.btn-activar');
+      if (btnActivar) {
+        const card = btnActivar.closest('.projecte-card');
+        const preuInput = card.querySelector('.input-preu-nou');
+        const preu = preuInput ? (parseFloat(preuInput.value) || 0) : 0;
+        activarNexaControl_(btnActivar.dataset.id, btnActivar.dataset.desc, btnActivar.dataset.client, preu, btnActivar);
+        return;
+      }
+      const btnFlag = e.target.closest('.flag-btn');
+      if (btnFlag) { obrirIdiomaPicker_(btnFlag); return; }
+      const dateInput = e.target.closest('.input-data-implementacio');
+      if (dateInput) { obrirDatePicker_(dateInput); return; }
+      const btnToggle = e.target.closest('.btn-toggle-actiu');
+      if (btnToggle) {
+        const properActiu = btnToggle.dataset.actiu === 'true'; // reactivar → true, suspendre → false
+        canviarActivacioProjecte_(btnToggle.dataset.id, properActiu, btnToggle);
+        return;
+      }
+      const btnVisible = e.target.closest('.btn-toggle-visible');
+      if (btnVisible) {
+        const properVisible = btnVisible.dataset.visible === 'true'; // "Fer visible" → true, "Amagar" → false
+        canviarVisibilitatClient_(btnVisible.dataset.id, properVisible);
+        return;
+      }
+      const btnRef = e.target.closest('.btn-toggle-ref');
+      if (btnRef) {
+        const properMostrar = btnRef.dataset.mostrar === 'true';
+        canviarMostrarReferencia_(btnRef.dataset.id, properMostrar);
+        return;
+      }
+      const chip = e.target.closest('.torn-chip');
+      if (chip) {
+        const contenidor = chip.closest('.torns-chips');
+        const id = contenidor.dataset.id;
+        const item = projectesErpCache_.find(p => p.id === id);
+        if (!item) return;
+        const torn = chip.dataset.torn;
+        const actiu = item.torns.indexOf(torn) !== -1;
+        const nous = actiu ? item.torns.filter(t => t !== torn) : item.torns.concat([torn]);
+        if (!nous.length) return; // sempre almenys 1 torn actiu
+        item.torns = nous;
+        pintarProjectesTaula_();
+        google.script.run
+          .withFailureHandler(errorSessio_)
+          .canviarTornsProjecte(token, id, nous);
+        return;
+      }
+    });
+    document.getElementById('projectes-grid').addEventListener('change', function (e) {
+      if (e.target.classList.contains('input-data-implementacio')) {
+        guardarDataImplementacio_(e.target.dataset.id, e.target.value);
+      } else if (e.target.classList.contains('input-preu-plus')) {
+        guardarPreuPlus_(e.target.dataset.id, parseFloat(e.target.value) || 0);
+      }
+    });
+
+    // ── Selector d'idioma amb bandera (popup flotant, mateix patró que l'ERP) ──
+    let idiomaBtnActiu_ = null;
+    function obrirIdiomaPicker_(btn) {
+      idiomaBtnActiu_ = btn;
+      const pop = document.getElementById('idioma-popup');
+      const r = btn.getBoundingClientRect();
+      pop.style.left = r.left + 'px';
+      pop.style.top = (r.bottom + 4) + 'px';
+      pop.classList.add('show');
+    }
+    document.getElementById('idioma-popup').addEventListener('click', function (e) {
+      const opt = e.target.closest('.idioma-opt');
+      if (!opt || !idiomaBtnActiu_) return;
+      const idioma = opt.dataset.idioma;
+      const client = idiomaBtnActiu_.dataset.client;
+      idiomaBtnActiu_.querySelector('img').src = banderaUrl_(idioma);
+      idiomaBtnActiu_.dataset.idioma = idioma;
+      document.getElementById('idioma-popup').classList.remove('show');
+      google.script.run
+        .withSuccessHandler(function () {
+          const itemProjecte = projectesErpCache_.find(p => p.client === client);
+          if (itemProjecte) itemProjecte.idioma = idioma;
+          const itemClient = clientsFacturacioCache_.find(c => c.client === client);
+          if (itemClient) itemClient.idioma = idioma;
+        })
+        .withFailureHandler(errorSessio_)
+        .setIdiomaOverride(token, client, idioma);
+      idiomaBtnActiu_ = null;
+    });
+    document.addEventListener('click', function (e) {
+      const pop = document.getElementById('idioma-popup');
+      if (!pop.classList.contains('show')) return;
+      if (pop.contains(e.target) || (idiomaBtnActiu_ && idiomaBtnActiu_.contains(e.target))) return;
+      pop.classList.remove('show');
+      idiomaBtnActiu_ = null;
+    });
+
+    // ── Calendari propi (substitueix el input type="date" natiu) ──────────
+    let dateInputActiu_ = null;
+    let dateViewAny_ = 0, dateViewMes_ = 0; // mes 0-11
+    const MESOS_CALENDARI_ = ['Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny', 'Juliol', 'Agost', 'Setembre', 'Octubre', 'Novembre', 'Desembre'];
+
+    function formatIso_(d) {
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function obrirDatePicker_(input) {
+      dateInputActiu_ = input;
+      const base = input.value ? new Date(input.value + 'T00:00:00') : new Date();
+      dateViewAny_ = base.getFullYear();
+      dateViewMes_ = base.getMonth();
+      renderDatePopup_();
+      const pop = document.getElementById('date-popup');
+      const r = input.getBoundingClientRect();
+      pop.style.left = r.left + 'px';
+      pop.style.top = (r.bottom + 4) + 'px';
+      pop.classList.add('show');
+    }
+
+    function renderDatePopup_() {
+      document.getElementById('date-month-label').textContent = MESOS_CALENDARI_[dateViewMes_] + ' ' + dateViewAny_;
+      const primerDia = new Date(dateViewAny_, dateViewMes_, 1);
+      const inici = (primerDia.getDay() + 6) % 7; // dilluns=0
+      const diesMes = new Date(dateViewAny_, dateViewMes_ + 1, 0).getDate();
+      const avuiIso = formatIso_(new Date());
+      const seleccionatIso = dateInputActiu_.value || '';
+
+      let html = '';
+      for (let i = 0; i < inici; i++) html += '<span></span>';
+      for (let d = 1; d <= diesMes; d++) {
+        const iso = formatIso_(new Date(dateViewAny_, dateViewMes_, d));
+        const classes = ['date-day'];
+        if (iso === avuiIso) classes.push('avui');
+        if (iso === seleccionatIso) classes.push('seleccionat');
+        html += `<span class="${classes.join(' ')}" data-iso="${iso}">${d}</span>`;
+      }
+      document.getElementById('date-popup-days').innerHTML = html;
+    }
+
+    function tancarDatePicker_() {
+      document.getElementById('date-popup').classList.remove('show');
+      dateInputActiu_ = null;
+    }
+
+    function seleccionarData_(iso) {
+      dateInputActiu_.value = iso;
+      dateInputActiu_.dispatchEvent(new Event('change', { bubbles: true }));
+      tancarDatePicker_();
+    }
+
+    document.getElementById('date-popup-days').addEventListener('click', function (e) {
+      const dia = e.target.closest('.date-day');
+      if (!dia || !dateInputActiu_) return;
+      seleccionarData_(dia.dataset.iso);
+    });
+    document.getElementById('date-prev').addEventListener('click', function () {
+      dateViewMes_--; if (dateViewMes_ < 0) { dateViewMes_ = 11; dateViewAny_--; }
+      renderDatePopup_();
+    });
+    document.getElementById('date-next').addEventListener('click', function () {
+      dateViewMes_++; if (dateViewMes_ > 11) { dateViewMes_ = 0; dateViewAny_++; }
+      renderDatePopup_();
+    });
+    document.getElementById('date-avui').addEventListener('click', function () {
+      if (dateInputActiu_) seleccionarData_(formatIso_(new Date()));
+    });
+    document.getElementById('date-clear').addEventListener('click', function () {
+      if (dateInputActiu_) seleccionarData_('');
+    });
+    document.addEventListener('click', function (e) {
+      const pop = document.getElementById('date-popup');
+      if (!pop.classList.contains('show')) return;
+      if (pop.contains(e.target) || e.target.classList.contains('date-input')) return;
+      tancarDatePicker_();
+    });
+    document.getElementById('filtre-desde').addEventListener('click', function () { obrirDatePicker_(this); });
+    document.getElementById('filtre-fins').addEventListener('click', function () { obrirDatePicker_(this); });
+
+    function activarNexaControl_(id, descripcio, client, preuPlus, btn) {
+      btn.disabled = true;
+      btn.classList.add('loading');
+      // Canvi immediat: pintem com a actiu abans de rebre resposta del servidor.
+      const item = projectesErpCache_.find(p => p.id === id);
+      if (item) {
+        item.nexaControlActiu = true;
+        item.nexaControlSuspes = false;
+        item.preuPlus = preuPlus;
+        pintarProjectesTaula_();
+      }
+      google.script.run
+        .withSuccessHandler(function () { carregarProjectesErp(true); })
+        .withFailureHandler(function (err) {
+          if (item) { item.nexaControlActiu = false; pintarProjectesTaula_(); }
+          errorSessio_(err);
+        })
+        .activarNexaControl(token, id, descripcio, client, preuPlus);
+    }
+
+    function canviarActivacioProjecte_(id, actiu, btn) {
+      // Canvi immediat: no esperem l'RPC per repintar l'estat del xip/botó.
+      const item = projectesErpCache_.find(p => p.id === id);
+      if (item) { item.nexaControlSuspes = !actiu; pintarProjectesTaula_(); }
+      google.script.run
+        .withSuccessHandler(function () { carregarProjectesErp(true); })
+        .withFailureHandler(function (err) {
+          if (item) { item.nexaControlSuspes = actiu; pintarProjectesTaula_(); }
+          errorSessio_(err);
+        })
+        .canviarActivacioProjecte(token, id, actiu);
+    }
+
+    function canviarVisibilitatClient_(id, visible) {
+      const item = projectesErpCache_.find(p => p.id === id);
+      if (item) { item.visibleClient = visible; pintarProjectesTaula_(); }
+      google.script.run
+        .withSuccessHandler(function () { carregarProjectesErp(true); maquinesCache_ = null; carregarMaquines(); })
+        .withFailureHandler(function (err) {
+          if (item) { item.visibleClient = !visible; pintarProjectesTaula_(); }
+          errorSessio_(err);
+        })
+        .canviarVisibilitatClient(token, id, visible);
+    }
+
+    function canviarMostrarReferencia_(id, mostrar) {
+      const item = projectesErpCache_.find(p => p.id === id);
+      if (item) { item.mostrarReferencia = mostrar; pintarProjectesTaula_(); }
+      google.script.run
+        .withSuccessHandler(function () { carregarProjectesErp(true); })
+        .withFailureHandler(function (err) {
+          if (item) { item.mostrarReferencia = !mostrar; pintarProjectesTaula_(); }
+          errorSessio_(err);
+        })
+        .canviarMostrarReferencia(token, id, mostrar);
+    }
+
+    function guardarDataImplementacio_(id, novaData) {
+      google.script.run
+        .withSuccessHandler(function () {
+          const item = projectesErpCache_.find(p => p.id === id);
+          if (item) item.dataImplementacio = novaData;
+        })
+        .withFailureHandler(errorSessio_)
+        .actualitzarDataImplementacio(token, id, novaData || null);
+    }
+
+    function guardarPreuPlus_(id, preu) {
+      google.script.run
+        .withSuccessHandler(function () {
+          const item = projectesErpCache_.find(p => p.id === id);
+          if (item) item.preuPlus = preu;
+        })
+        .withFailureHandler(errorSessio_)
+        .actualitzarPreuPlus(token, id, preu);
+    }
+
+    // ── Clients: facturació NexaControl ──────────────────────────
+    let clientsFacturacioCache_ = [];
+
+    function carregarClientsFacturacio_(silenciós) {
+      if (silenciós && clientsFacturacioCache_.length) {
+        pintarClientsGrid_();
+      } else {
+        pintarEsquelet_('clients-grid', 190);
+      }
+      google.script.run
+        .withSuccessHandler(function (clients) {
+          const igual = clientsFacturacioCache_.length && JSON.stringify(clients) === JSON.stringify(clientsFacturacioCache_);
+          clientsFacturacioCache_ = clients;
+          if (!igual) pintarClientsGrid_();
+        })
+        .withFailureHandler(errorSessio_)
+        .getClientsFacturacio(token);
+    }
+
+    function formatEuros_(n) {
+      return (Number(n) || 0).toLocaleString('ca-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    }
+
+    let clientsJaAnimat_ = false;
+
+    function pintarClientsGrid_() {
+      const grid = document.getElementById('clients-grid');
+      grid.classList.toggle('ja-animat', clientsJaAnimat_);
+      clientsJaAnimat_ = true;
+      grid.innerHTML = clientsFacturacioCache_.map(c => `
+        <div class="client-card">
+          <div class="client-card-top">
+            <div>
+              <div class="client-card-nom">${escHtml_(c.client)}</div>
+              <div class="client-card-projectes">${c.projectesActius} projecte${c.projectesActius === 1 ? '' : 's'} actiu${c.projectesActius === 1 ? '' : 's'} a NexaControl</div>
+            </div>
+            <button type="button" class="flag-btn" data-client="${escHtml_(c.client)}" data-idioma="${escHtml_(c.idioma || 'ca')}" title="Idioma">
+              <img src="${banderaUrl_(c.idioma)}" alt="${escHtml_((c.idioma || 'ca').toUpperCase())}">
+            </button>
+          </div>
+          <div class="projecte-data">
+            <label>Preu base (€)</label>
+            <input type="number" min="0" step="0.01" class="input-preu-base" data-client="${escHtml_(c.client)}" value="${c.preuBase}">
+          </div>
+          <div class="client-card-linia"><span>Plus per projectes</span><span>${formatEuros_(c.sumaPlus)}</span></div>
+          <div class="client-card-total"><span>Total</span><span>${formatEuros_(c.total)}</span></div>
+        </div>`).join('') || `<div class="empty-state">${t_('buit_dades')}</div>`;
+    }
+
+    document.getElementById('clients-grid').addEventListener('change', function (e) {
+      if (!e.target.classList.contains('input-preu-base')) return;
+      const client = e.target.dataset.client;
+      const preu = parseFloat(e.target.value) || 0;
+      google.script.run
+        .withSuccessHandler(function () {
+          const item = clientsFacturacioCache_.find(c => c.client === client);
+          if (item) {
+            item.preuBase = preu;
+            item.total = Math.round((preu + item.sumaPlus) * 100) / 100;
+            pintarClientsGrid_();
+          }
+        })
+        .withFailureHandler(errorSessio_)
+        .actualitzarPreuBase(token, client, preu);
+    });
+
+    document.getElementById('clients-grid').addEventListener('click', function (e) {
+      const btnFlag = e.target.closest('.flag-btn');
+      if (btnFlag) obrirIdiomaPicker_(btnFlag);
+    });
+
+    function carregarMaquines(silenciós) {
+      // El text de cerca es filtra 100% al client (veure filtrarMaquinesText_):
+      // fer-ho al servidor disparava un RPC sencer a cada tecla i anava molt lent.
+      const filtres = esAdmin_ ? {
+        clientId: document.getElementById('filtre-client').value || null,
+        any: document.getElementById('filtre-admin-any').value || null
+      } : {};
+      if (silenciós && maquinesCache_) {
+        pintarMaquines(filtrarMaquinesText_(maquinesCache_));
+      } else {
+        pintarEsquelet_('maquines-grid', 210);
+      }
+      google.script.run
+        .withSuccessHandler(function (maquines) {
+          // Evita repintar (i re-disparar l'animació d'entrada de les
+          // targetes) quan el poll silenciós detecta un canvi a l'app
+          // però les dades d'aquesta vista concreta són exactament les
+          // mateixes que ja es veien — si no, amb heartbeats cada 5s
+          // gairebé sempre "canvia algo" i la graella parpelleja sola.
+          const igual = maquinesCache_ && JSON.stringify(maquines) === JSON.stringify(maquinesCache_);
+          maquinesCache_ = maquines;
+          if (!igual) pintarMaquines(filtrarMaquinesText_(maquines));
+          precarregarFitxesMaquines_(maquines);
+        })
+        .withFailureHandler(errorSessio_)
+        .getMaquines(token, filtres);
+    }
+
+    // Carrega en silenci la fitxa de cada màquina (any actual, sense filtres)
+    // just quan es pinten les targetes, perquè obrir-la desprès sigui instantani.
+    function precarregarFitxesMaquines_(maquines) {
+      maquines.forEach(function (m) {
+        if (m.estatActual === 'incomunicada' || m.estatActual === 'desactivada') return;
+        google.script.run
+          .withSuccessHandler(function (resposta) { fitxaCache_[m.machineId] = JSON.parse(resposta); })
+          .withFailureHandler(function () {})
+          .getDetallMaquina(token, m.machineId, null, null, { any: new Date().getFullYear(), mes: null, torn: null });
+      });
+    }
+
+    function filtrarMaquinesText_(maquines) {
+      const q = (document.getElementById('filtre-admin-text').value || '').trim().toLowerCase();
+      if (!q) return maquines;
+      return maquines.filter(m =>
+        (m.nom || '').toLowerCase().includes(q) || (m.clientNom || '').toLowerCase().includes(q));
+    }
+
+    const ICONA_WIFI_OFF = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 12.5a10 10 0 0 1 5.5-3.4"/><path d="M19 12.5a10 10 0 0 0-3.2-2.4"/><path d="M2 8.5a15 15 0 0 1 4.2-2.6"/><path d="M22 8.5a15 15 0 0 0-4.7-3"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>';
+
+    function badgeHtml_(estat) {
+      const icona = estat === 'incomunicada' ? ICONA_WIFI_OFF : '';
+      return `<span class="estat-badge estat-${estat}">${icona}${t_('estat_' + estat)}</span>`;
+    }
+
+    let maquinesJaAnimat_ = false;
+
+    function pintarMaquines(maquines) {
+      const grid = document.getElementById('maquines-grid');
+      // Nomes anima l'entrada de les targetes la primera vegada que es
+      // pinten — als repintats posteriors (canvi de pestanya, poll
+      // silenciós) l'animació tornava a saltar cada cop i feia l'efecte
+      // de "parpadeig". El toggle s'ha de fer ABANS del innerHTML perquè
+      // les targetes noves ja neixin amb la classe (si no, no es pot evitar
+      // el primer frame animat).
+      grid.classList.toggle('ja-animat', maquinesJaAnimat_);
+      maquinesJaAnimat_ = true;
+      grid.innerHTML = '';
+      maquines.forEach(m => {
+        const incomunicada = m.estatActual === 'incomunicada';
+        const desactivada = m.estatActual === 'desactivada';
+        const card = document.createElement('div');
+        card.className = 'maquina-card' + (incomunicada ? ' incomunicada' : '') + (desactivada ? ' desactivada' : '');
+        if (!incomunicada && !desactivada) card.onclick = () => obrirFitxa(m.machineId);
+        card.innerHTML = `
+          <div class="img-placeholder">
+            ${m.imatgeUrl ? `<img src="${m.imatgeUrl}">` : t_('senseImatge')}
+            <div class="img-badge">${badgeHtml_(m.estatActual)}</div>
+          </div>
+          <div class="maquina-info">
+            <div class="maquina-top">
+              ${m.clientNom ? `<div class="client-tag">${m.clientNom}</div>` : ''}
+              <span class="nom">${m.nom}</span>
+              ${m.visiblePelClient === false ? '<span class="chip-postamarxa">Posta en marxa — no visible al client</span>' : ''}
+            </div>
+            <div class="barres-dades">
+              ${barraHtml_(t_('barra_produccio'), 'fill-produccio', m.horesProduccio)}
+              ${barraHtml_(t_('barra_alarma'), 'fill-alarma', m.horesAlarma)}
+              ${barraHtml_(t_('barra_parada'), 'fill-parada', m.horesParada)}
+            </div>
+          </div>`;
+        grid.appendChild(card);
+      });
+      if (!maquines.length) {
+        grid.innerHTML = `<div class="empty-state">${t_('buit_dades')}</div>`;
+      }
+    }
+
+    function barraHtml_(etiqueta, classeOmpliment, hores) {
+      const percent = Math.min(100, Math.round((hores / 24) * 100));
+      return `
+        <div class="barra-row">
+          <span class="barra-label">${etiqueta}</span>
+          <div class="barra-track"><div class="barra-fill ${classeOmpliment}" style="width:${percent}%"></div></div>
+          <span class="barra-valor">${hores}h/24h</span>
+        </div>`;
+    }
+
+    function obrirFitxa(machineId) {
+      maquinaActual = machineId;
+      anysPoblats_ = false;
+      anysHistoricPoblats_ = false;
+      document.getElementById('filtre-desde').value = '';
+      document.getElementById('filtre-fins').value = '';
+      document.getElementById('filtre-mes').value = String(new Date().getMonth() + 1);
+      document.getElementById('filtre-mes-h').value = '';
+      referenciaPoblat_ = false;
+      document.getElementById('filtre-referencia').value = '';
+      document.querySelectorAll('#filtre-torn .filtre-torn-btn.actiu')
+        .forEach(boto => boto.classList.remove('actiu'));
+      document.querySelectorAll('#filtre-torn-h .filtre-torn-btn.actiu')
+        .forEach(boto => boto.classList.remove('actiu'));
+      document.getElementById('home-view').classList.add('hidden');
+      document.getElementById('fitxa-view').classList.remove('hidden');
+      const scrollBox = document.getElementById('fitxa-scroll');
+      if (scrollBox) scrollBox.scrollTop = 0;
+      const sticky = document.getElementById('fitxa-sticky');
+      if (sticky) sticky.classList.remove('condensat');
+      const cache = fitxaCache_[machineId];
+      if (cache) { pintarFitxa(cache.fitxa); pintarProduccio(cache.produccio); }
+      carregarDetallMaquina(machineId);
+      desarVistaActual_();
+    }
+
+    function tornarHome() {
+      maquinaActual = null;
+      document.getElementById('fitxa-view').classList.add('hidden');
+      document.getElementById('home-view').classList.remove('hidden');
+      carregarMaquines(true);
+      desarVistaActual_();
+    }
+
+    // ── Recorda la darrera pàgina/fitxa oberta per restaurar-la en recarregar ──
+    function desarVistaActual_() {
+      try {
+        if (maquinaActual) {
+          localStorage.setItem('monitor_vista', JSON.stringify({ vista: 'fitxa', maquina: maquinaActual }));
+        } else {
+          localStorage.setItem('monitor_vista', JSON.stringify({ vista: vistaActual_ }));
+        }
+      } catch (e) {}
+    }
+    function restaurarVistaActual_() {
+      let desat = null;
+      try { desat = JSON.parse(localStorage.getItem('monitor_vista') || 'null'); } catch (e) {}
+      if (!desat) return;
+      if (desat.vista === 'fitxa' && desat.maquina) { obrirFitxa(desat.maquina); return; }
+      if ((desat.vista === 'projectes' || desat.vista === 'clients') && esAdmin_) mostrarVista_(desat.vista);
+    }
+
+    // ── Subnav de la fitxa: desplaçament suau + secció activa mentre es fa scroll ──
+    function anarAIncidenciesActives_() {
+      const destí = document.getElementById('panell-actives');
+      if (!destí) return;
+      const reduitMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      destí.scrollIntoView({ behavior: reduitMotion ? 'auto' : 'smooth', block: 'start' });
+    }
+
+    function anarAParades_() {
+      const destí = document.getElementById('panell-parades');
+      if (!destí) return;
+      const reduitMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      destí.scrollIntoView({ behavior: reduitMotion ? 'auto' : 'smooth', block: 'start' });
+    }
+
+    document.getElementById('fitxa-subnav').addEventListener('click', function (e) {
+      const link = e.target.closest('a');
+      if (!link) return;
+      e.preventDefault();
+      const destí = document.getElementById(link.dataset.target);
+      if (!destí) return;
+      const reduitMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      destí.scrollIntoView({ behavior: reduitMotion ? 'auto' : 'smooth', block: 'start' });
+    });
+    (function () {
+      const links = document.querySelectorAll('#fitxa-subnav a');
+      if (!links.length || typeof IntersectionObserver === 'undefined') return;
+      const observer = new IntersectionObserver(function (entrades) {
+        // Quan es carrega la fitxa poden coincidir diverses seccions dins la
+        // banda alhora (primer render, encara curtes): la vàlida és sempre
+        // la de mes amunt, no la que es processi l'última.
+        const visibles = entrades.filter(e => e.isIntersecting);
+        if (!visibles.length) return;
+        visibles.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        const idActiu = visibles[0].target.id;
+        links.forEach(l => l.classList.toggle('actiu', l.dataset.target === idActiu));
+      }, { root: document.getElementById('fitxa-scroll'), rootMargin: '-30% 0px -60% 0px' });
+      document.querySelectorAll('#fitxa-view .panell').forEach(p => observer.observe(p));
+    })();
+    // Condensa la capçalera (amaga la imatge) en fer scroll DINS #fitxa-scroll
+    // (ja no la finestra: el scroll ara és intern, acabat just sota la capçalera).
+    // Dos llindars diferents
+    // (histèresi) perquè just al límit no oscil·li: no es torna a expandir fins
+    // baixar prou amunt, encara que el scroll tremoli un parell de píxels.
+    (function () {
+      const sticky = document.getElementById('fitxa-sticky');
+      const scrollBox = document.getElementById('fitxa-scroll');
+      if (!sticky || !scrollBox) return;
+      let tick = false;
+      function actualitzar() {
+        tick = false;
+        const y = scrollBox.scrollTop;
+        const araCondensat = sticky.classList.contains('condensat');
+        if (!araCondensat && y > 90) sticky.classList.add('condensat');
+        else if (araCondensat && y < 40) sticky.classList.remove('condensat');
+      }
+      scrollBox.addEventListener('scroll', function () {
+        if (tick) return;
+        tick = true;
+        requestAnimationFrame(actualitzar);
+      }, { passive: true });
+    })();
+
+    function carregarFitxa(machineId) {
+      const desde = document.getElementById('filtre-desde').value || null;
+      const fins = document.getElementById('filtre-fins').value || null;
+      const filtres = {
+        any: document.getElementById('filtre-any-h').value || null,
+        mes: document.getElementById('filtre-mes-h').value || null,
+        torns: tornsSeleccionatsHistoric_()
+      };
+      google.script.run
+        .withSuccessHandler(pintarFitxa)
+        .withFailureHandler(errorSessio_)
+        .getFitxaMaquina(token, machineId, desde, fins, filtres);
+    }
+
+    function carregarDetallMaquina(machineId) {
+      const desde = document.getElementById('filtre-desde').value || null;
+      const fins = document.getElementById('filtre-fins').value || null;
+      const filtres = {
+        // La primera carga ya pide el año actual: evita una segunda petición
+        // automática al rellenar el selector de años.
+        any: document.getElementById('filtre-any').value || new Date().getFullYear(),
+        mes: document.getElementById('filtre-mes').value || null,
+        torns: tornsSeleccionats_(),
+        referencia: document.getElementById('filtre-referencia').value || null
+      };
+      google.script.run
+        .withSuccessHandler(function (resposta) {
+          const dades = JSON.parse(resposta);
+          const cacheAnterior = fitxaCache_[machineId];
+          const igual = cacheAnterior && JSON.stringify(dades) === JSON.stringify(cacheAnterior);
+          fitxaCache_[machineId] = dades;
+          if (!igual) {
+            pintarFitxa(dades.fitxa);
+            pintarProduccio(dades.produccio);
+          }
+        })
+        .withFailureHandler(errorSessio_)
+        .getDetallMaquina(token, machineId, desde, fins, filtres);
+    }
+
+    let anysPoblats_ = false;
+
+    function tornsSeleccionats_() {
+      return Array.from(document.querySelectorAll('#filtre-torn .filtre-torn-btn.actiu'))
+        .map(boto => boto.dataset.torn);
+    }
+
+    function tornsSeleccionatsHistoric_() {
+      return Array.from(document.querySelectorAll('#filtre-torn-h .filtre-torn-btn.actiu'))
+        .map(boto => boto.dataset.torn);
+    }
+
+    function carregarProduccio(canviDeTorns) {
+      const any = document.getElementById('filtre-any').value || null;
+      const mes = document.getElementById('filtre-mes').value || null;
+      const torns = tornsSeleccionats_();
+      const referencia = document.getElementById('filtre-referencia').value || null;
+      const clauCache = [maquinaActual, any || '', mes || '', torns.join(','), referencia || ''].join('|');
+      if (canviDeTorns && produccioActual_) {
+        renderGraficProduccio_(produccioActual_.perDia, produccioActual_.perDiaPerTorn || []);
+        pintarResumTorns_(produccioActual_.perDiaPerTorn || []);
+      }
+      if (produccioCache_[clauCache]) {
+        pintarProduccio(produccioCache_[clauCache]);
+      } else {
+        google.script.run
+          .withSuccessHandler(function (resposta) {
+            const dades = JSON.parse(resposta);
+            produccioCache_[clauCache] = dades;
+            pintarProduccio(dades);
+          })
+          .withFailureHandler(errorSessio_)
+          .getProduccio(token, maquinaActual, { any: any, mes: mes, torns: torns, referencia: referencia });
+      }
+    }
+
+    function carregarHistoric_() {
+      const any = document.getElementById('filtre-any-h').value || null;
+      const mes = document.getElementById('filtre-mes-h').value || null;
+      const desde = document.getElementById('filtre-desde').value || null;
+      const fins = document.getElementById('filtre-fins').value || null;
+      const filtres = { any: any, mes: mes, torns: tornsSeleccionatsHistoric_() };
+      google.script.run
+        .withSuccessHandler(pintarHistoric_)
+        .withFailureHandler(errorSessio_)
+        .getFitxaMaquina(token, maquinaActual, desde, fins, filtres);
+    }
+
+    function pintarProduccio(p) {
+      produccioActual_ = p;
+      const selAny = document.getElementById('filtre-any');
+      if (!anysPoblats_) {
+        selAny.innerHTML = '<option value="">' + t_('f_tots') + '</option>' +
+          p.anysDisponibles.map(a => `<option value="${a}">${a}</option>`).join('');
+        anysPoblats_ = true;
+        const actual = new Date().getFullYear();
+        if (p.anysDisponibles.includes(actual)) {
+          selAny.value = String(actual);
+        }
+      }
+      if (!referenciaPoblat_) {
+        const selRef = document.getElementById('filtre-referencia');
+        const refActual = selRef.value;
+        selRef.innerHTML = '<option value="">' + t_('f_totes') + '</option>' +
+          (p.referenciesDisponibles || []).map(r => `<option value="${escHtml_(r)}">${escHtml_(r)}</option>`).join('');
+        selRef.value = refActual;
+        referenciaPoblat_ = true;
+      }
+
+      const r = p.resum;
+      document.getElementById('kpi-peces').textContent = formatarNumero_(r.pecesBones);
+      document.getElementById('kpi-merma').textContent = formatarNumero_(r.pecesMerma) + ' (' + r.percentMerma + '%)';
+      document.getElementById('kpi-actiu').textContent = formatarHoresMin_(r.tempsActiuMin) + ' (' + (r.disponibilitat * 100).toFixed(0) + '%)';
+      document.getElementById('kpi-parat').textContent = formatarHoresMin_(r.tempsParatMin);
+      document.getElementById('kpi-oee').textContent = (r.oee * 100).toFixed(0) + '%';
+      document.getElementById('oee-center-text').textContent = (r.oee * 100).toFixed(0) + '%';
+      document.getElementById('oee-leg-disp').textContent = (r.disponibilitat * 100).toFixed(0) + '%';
+      document.getElementById('oee-leg-qual').textContent = (r.qualitat * 100).toFixed(0) + '%';
+      setArcOee_(document.getElementById('oee-arc-disp'), 40, r.disponibilitat);
+      setArcOee_(document.getElementById('oee-arc-qual'), 30, r.qualitat);
+
+      renderGraficProduccio_(p.perDia, p.perDiaPerTorn || []);
+      pintarResumTorns_(p.perDiaPerTorn || []);
+
+      document.getElementById('th-referencia').classList.toggle('hidden', !mostrarReferenciaActual_);
+      const taulaProd = document.getElementById('produccio-taula');
+      if (mostrarReferenciaActual_ && (p.perDiaPerReferencia || []).length) {
+        taulaProd.innerHTML = p.perDiaPerReferencia.map(d => {
+          const indexDia = p.perDia.findIndex(dd => dd.data === d.data);
+          return `
+          <tr${indexDia !== -1 ? ` data-index="${indexDia}" class="fila-clicable"` : ''}>
+            <td>${formatarData_(d.data)}</td>
+            <td>${escHtml_(d.referencia)}</td>
+            <td>${d.pecesBones}</td>
+            <td>${d.pecesMerma}</td>
+            <td>${d.tempsActiuMin}</td>
+          </tr>`;
+        }).join('') || `<tr><td colspan="5" class="empty-state">${t_('buit_dades')}</td></tr>`;
+      } else {
+        taulaProd.innerHTML = p.perDia.map((d, i) => `
+          <tr data-index="${i}" class="fila-clicable">
+            <td>${formatarData_(d.data)}</td>
+            ${mostrarReferenciaActual_ ? '<td>-</td>' : ''}
+            <td>${d.pecesBones}</td>
+            <td>${d.pecesMerma}</td>
+            <td>${d.tempsActiuMin}</td>
+          </tr>`).join('') || `<tr><td colspan="${mostrarReferenciaActual_ ? 5 : 4}" class="empty-state">${t_('buit_dades')}</td></tr>`;
+      }
+
+      function formatarDurada_(min, seg) {
+        if (min > 0) return min;
+        return (seg || 0) + 's';
+      }
+
+      const taulaParades = document.getElementById('parades-taula');
+      taulaParades.innerHTML = p.paradas.map(pa => `
+        <tr class="${pa.activa ? 'fila-activa' : ''}">
+          <td>${formatarDataHora_(pa.inici)}</td>
+          <td>${pa.activa ? '<span class="chip-en-curs">En curs</span>' : formatarDataHora_(pa.fi)}</td>
+          <td>${pa.activa ? '—' : formatarDurada_(pa.duradaMin, pa.duradaSeg)}</td>
+          <td>${pa.causa}</td>
+        </tr>`).join('') || `<tr><td colspan="4" class="empty-state">${t_('buit_paradas')}</td></tr>`;
+    }
+
+    // Quadradet ple (o mig blanc partit en diagonal per "Merma") per al tooltip
+    // del gràfic. Es dibuixa com a <canvas> i es passa com a pointStyle: els
+    // patrons (CanvasPattern) no els accepta el color del tooltip de Chart.js,
+    // però un canvas com a pointStyle sí està suportat de manera fiable.
+    function quadratTooltip_(color, diagonal) {
+      const mida = 12;
+      const c = document.createElement('canvas');
+      c.width = mida; c.height = mida;
+      const cx = c.getContext('2d');
+      if (diagonal) {
+        cx.fillStyle = '#ffffff';
+        cx.fillRect(0, 0, mida, mida);
+        cx.fillStyle = color;
+        cx.beginPath();
+        cx.moveTo(0, mida);
+        cx.lineTo(mida, mida);
+        cx.lineTo(mida, 0);
+        cx.closePath();
+        cx.fill();
+      } else {
+        cx.fillStyle = color;
+        cx.fillRect(0, 0, mida, mida);
+      }
+      return c;
+    }
+
+    function renderGraficProduccio_(perDia, perDiaPerTorn) {
+      const ctx = document.getElementById('grafic-produccio');
+      const etiquetes = perDia.map(d => formatarData_(d.data));
+      const dadesBones = perDia.map(d => d.pecesBones);
+      const dadesMerma = perDia.map(d => d.pecesMerma);
+      const torns = tornsSeleccionats_();
+      const datasets = torns.length
+        ? torns.flatMap(torn => [
+            {
+              label: DICC[idioma_].torns[torn] + ' — ' + t_('kpi_peces'),
+              data: perDiaPerTorn.map(d => (d[torn] || {}).pecesBones || 0),
+              borderColor: COLORS_TORN_[torn], backgroundColor: 'transparent', tension: .3, fill: false, pointRadius: 2
+            },
+            {
+              label: DICC[idioma_].torns[torn] + ' — ' + t_('kpi_merma'),
+              data: perDiaPerTorn.map(d => (d[torn] || {}).pecesMerma || 0),
+              borderColor: COLORS_TORN_[torn], backgroundColor: 'transparent', borderDash: [6, 4], tension: .3, fill: false, pointRadius: 2
+            }
+          ])
+        : [
+            { label: t_('kpi_peces'), data: dadesBones, borderColor: '#34d17a', backgroundColor: 'rgba(52,209,122,.12)', tension: .3, fill: true, pointRadius: 2 },
+            { label: t_('kpi_merma'), data: dadesMerma, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.1)', tension: .3, fill: true, pointRadius: 2 }
+          ];
+
+      if (graficProduccio_) {
+        graficProduccio_.data.labels = etiquetes;
+        graficProduccio_.data.datasets = datasets;
+        graficProduccio_.update();
+        return;
+      }
+
+      if (typeof Chart === 'undefined') return;
+      graficProduccio_ = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: etiquetes,
+          datasets: datasets
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              usePointStyle: true,
+              boxWidth: 12, boxHeight: 12,
+              callbacks: {
+                labelPointStyle: function (context) {
+                  const esMerma = (context.dataset.label || '').indexOf(t_('kpi_merma')) !== -1;
+                  return { pointStyle: quadratTooltip_(context.dataset.borderColor, esMerma), rotation: 0 };
+                }
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#8a95a5' }, grid: { color: '#2c343f' } },
+            y: { ticks: { color: '#8a95a5' }, grid: { color: '#2c343f' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    function mostrarTooltipDia_(index) {
+      mostrarTooltipGrafic_(graficProduccio_, 'grafic-produccio', index);
+    }
+
+    function mostrarTooltipHistoric_(index) {
+      mostrarTooltipGrafic_(graficHistoric_, 'grafic-historic', index);
+    }
+
+    function mostrarTooltipGrafic_(chart, containerId, index) {
+      if (!chart || !chart.data.datasets.length || index < 0) return;
+      const contenidor = document.getElementById(containerId);
+      const scrollBox = document.getElementById('fitxa-scroll');
+      const reduitMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const rect = contenidor.getBoundingClientRect();
+      const boxRect = scrollBox.getBoundingClientRect();
+      const visible = rect.top >= boxRect.top && rect.bottom <= boxRect.bottom;
+
+      function activar() {
+        const elements = chart.data.datasets.map((ds, datasetIndex) => ({ datasetIndex, index }));
+        const punt = chart.getDatasetMeta(0).data[index];
+        chart.setActiveElements(elements);
+        chart.tooltip.setActiveElements(elements, { x: punt ? punt.x : 0, y: punt ? punt.y : 0 });
+        chart.update();
+        clearTimeout(tooltipDiaTimeout_);
+        tooltipDiaTimeout_ = setTimeout(function () {
+          chart.setActiveElements([]);
+          chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+          chart.update();
+        }, 2500);
+      }
+
+      if (!visible) {
+        contenidor.scrollIntoView({ behavior: reduitMotion ? 'auto' : 'smooth', block: 'center' });
+        setTimeout(activar, reduitMotion ? 50 : 450);
+      } else {
+        activar();
+      }
+    }
+
+    document.getElementById('produccio-taula').addEventListener('click', function (e) {
+      const fila = e.target.closest('tr[data-index]');
+      if (!fila) return;
+      mostrarTooltipDia_(parseInt(fila.dataset.index, 10));
+    });
+
+    function pintarResumTorns_(perDiaPerTorn) {
+      const contenidor = document.getElementById('resum-torns');
+      const tornsActius = tornsSeleccionats_();
+      if (!tornsActius.length) {
+        contenidor.innerHTML = '';
+        contenidor.classList.add('hidden');
+        return;
+      }
+      contenidor.classList.remove('hidden');
+      const torns = tornsActius;
+      const totals = {};
+      torns.forEach(torn => { totals[torn] = { pecesBones: 0, pecesMerma: 0 }; });
+      perDiaPerTorn.forEach(dia => torns.forEach(torn => {
+        const dades = dia[torn] || {};
+        totals[torn].pecesBones += dades.pecesBones || 0;
+        totals[torn].pecesMerma += dades.pecesMerma || 0;
+      }));
+      contenidor.innerHTML = torns.map(torn => `
+        <div class="kpi resum-torn" data-torn="${torn}">
+          <div class="valor">${formatarNumero_(totals[torn].pecesBones)}</div>
+          <div class="etiqueta"><i></i>${DICC[idioma_].torns[torn]} · ${formatarNumero_(totals[torn].pecesMerma)} ${t_('kpi_merma')}</div>
+        </div>`).join('');
+    }
+
+    // Arc de 270° (SVG): dasharray fix (part visible del cercle), dashoffset
+    // variable segons el % real. circumferencia = 2*PI*r; arc = circumferencia*270/360.
+    function setArcOee_(circleEl, radi, fraccio) {
+      const circumferencia = 2 * Math.PI * radi;
+      const arc = circumferencia * 0.75;
+      circleEl.setAttribute('stroke-dasharray', arc + ' ' + circumferencia);
+      circleEl.setAttribute('stroke-dashoffset', arc * (1 - Math.max(0, Math.min(1, fraccio || 0))));
+    }
+
+    function formatarHoresMin_(minuts) {
+      const total = Math.round(Number(minuts) || 0);
+      const h = Math.floor(total / 60);
+      const m = total % 60;
+      return h > 0 ? h + 'h ' + m + 'm' : m + 'm';
+    }
+
+    function formatarNumero_(valor, decimals) {
+      const idioma = idioma_ === 'en' ? 'en-US' : (idioma_ === 'es' ? 'es-ES' : 'ca-ES');
+      return new Intl.NumberFormat(idioma, {
+        minimumFractionDigits: decimals || 0,
+        maximumFractionDigits: decimals || 0
+      }).format(Number(valor) || 0);
+    }
+
+    function pintarFitxa(f) {
+      tornsClientActual_ = (f.tornsClient && f.tornsClient.length) ? f.tornsClient : TOTS_TORNS_;
+      mostrarReferenciaActual_ = !!f.mostrarReferencia;
+      document.getElementById('filtre-referencia-wrap').classList.toggle('hidden', !mostrarReferenciaActual_);
+      aplicarIdioma_();
+      document.getElementById('fitxa-img').innerHTML = f.imatgeUrl ? `<img src="${f.imatgeUrl}">` : t_('senseImatge');
+      document.getElementById('fitxa-nom').textContent = f.nom;
+      const estatEl = document.getElementById('fitxa-estat');
+      estatEl.innerHTML = (f.estatActual === 'incomunicada' ? ICONA_WIFI_OFF : '') + t_('estat_' + f.estatActual);
+      estatEl.className = 'estat-badge estat-' + f.estatActual;
+      estatEl.classList.toggle('clicable', f.estatActual === 'alarma' || f.estatActual === 'parada');
+      estatEl.onclick = f.estatActual === 'alarma' ? anarAIncidenciesActives_
+        : f.estatActual === 'parada' ? anarAParades_
+        : null;
+
+      const actives = document.getElementById('incidencies-actives');
+      actives.innerHTML = f.incidenciesActives.length
+        ? f.incidenciesActives.map(i => `
+            <div style="margin-bottom:8px;">
+              <span class="incidencia-activa">${i.codi}</span> — ${i.missatge}
+              <div style="font-size:12px;color:var(--text-muted);">${t_('desde_h')} ${formatarDataHora_(i.timestampInici)}</div>
+            </div>`).join('')
+        : `<div class="empty-state">${t_('incidencies_cap')}</div>`;
+
+      pintarHistoric_(f);
+    }
+
+    function pintarHistoric_(f) {
+      const selAnyH = document.getElementById('filtre-any-h');
+      if (!anysHistoricPoblats_) {
+        selAnyH.innerHTML = '<option value="">' + t_('f_tots') + '</option>' +
+          (f.anysDisponiblesHistoric || []).map(a => `<option value="${a}">${a}</option>`).join('');
+        anysHistoricPoblats_ = true;
+      }
+
+      const historicTaula = document.getElementById('historic-taula');
+      historicTaula.innerHTML = f.incidenciesHistoric.map(i => `
+        <tr data-dia="${i.timestampInici.slice(0, 10)}" class="fila-clicable">
+          <td>${i.codi}</td>
+          <td>${i.missatge}</td>
+          <td><span class="torn-dot" style="background:${COLORS_TORN_[i.torn] || '#8a95a5'}"></span>${DICC[idioma_].torns[i.torn] || i.torn}</td>
+          <td>${formatarDataHora_(i.timestampInici)}</td>
+          <td>${formatarDataHora_(i.timestampFi)}</td>
+        </tr>`).join('') || `<tr><td colspan="5" class="empty-state">${t_('buit_incidencies')}</td></tr>`;
+
+      alarmesFrequentsActuals_ = f.alarmesMesFrequents || [];
+      pintarAlarmesFrequents_();
+
+      renderGraficHistoric_(f.incidenciesHistoric);
+    }
+
+    let alarmesFrequentsActuals_ = [];
+
+    function pintarAlarmesFrequents_() {
+      const cont = document.getElementById('historic-alarmes-frequents');
+      cont.innerHTML = alarmesFrequentsActuals_.length
+        ? alarmesFrequentsActuals_.map(a => `
+            <div class="kpi">
+              <div class="valor">${escHtml_(a.codi)} (${a.total})</div>
+              <div class="etiqueta">${t_('alarma_frequent')}</div>
+            </div>`).join('')
+        : `<div class="kpi"><div class="valor">-</div><div class="etiqueta">${t_('alarma_frequent')}</div></div>`;
+    }
+
+    function renderGraficHistoric_(historic) {
+      const ctx = document.getElementById('grafic-historic');
+      const torns = Object.keys(COLORS_TORN_);
+      const perDiaMap = {};
+      historic.forEach(i => {
+        const key = i.timestampInici.slice(0, 10);
+        if (!perDiaMap[key]) perDiaMap[key] = { data: i.timestampInici };
+        perDiaMap[key][i.torn] = (perDiaMap[key][i.torn] || 0) + 1;
+      });
+      historicDiesActuals_ = Object.values(perDiaMap).sort((a, b) => new Date(a.data) - new Date(b.data));
+      const etiquetes = historicDiesActuals_.map(d => formatarData_(d.data));
+      const datasets = torns.map(torn => ({
+        label: DICC[idioma_].torns[torn],
+        data: historicDiesActuals_.map(d => d[torn] || 0),
+        backgroundColor: COLORS_TORN_[torn], borderRadius: 4, stack: 'incidencies',
+        maxBarThickness: 40
+      }));
+
+      if (graficHistoric_) {
+        graficHistoric_.data.labels = etiquetes;
+        graficHistoric_.data.datasets = datasets;
+        graficHistoric_.update();
+        return;
+      }
+      if (typeof Chart === 'undefined') return;
+      graficHistoric_ = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: etiquetes, datasets: datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: true, position: 'bottom', labels: { color: '#8a95a5', boxWidth: 12, boxHeight: 12 } } },
+          scales: {
+            x: { stacked: true, ticks: { color: '#8a95a5' }, grid: { color: '#2c343f' } },
+            y: { stacked: true, ticks: { color: '#8a95a5', precision: 0 }, grid: { color: '#2c343f' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    document.getElementById('historic-taula').addEventListener('click', function (e) {
+      const fila = e.target.closest('tr[data-dia]');
+      if (!fila) return;
+      const idx = historicDiesActuals_.findIndex(d => d.data.slice(0, 10) === fila.dataset.dia);
+      mostrarTooltipHistoric_(idx);
+    });
+
+    function formatarData_(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString('ca-ES', { day: '2-digit', month: '2-digit' });
+    }
+    function formatarDataHora_(iso) {
+      if (!iso) return '-';
+      const d = new Date(iso);
+      return d.toLocaleDateString('ca-ES', { day: '2-digit', month: '2-digit' }) + ' ' +
+             d.toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function errorSessio_(err) {
+      const missatge = (err && err.message) || String(err) || 'Error desconegut.';
+      console.error('Error Apps Script:', missatge);
+      const zona = document.getElementById('app-error');
+      zona.textContent = missatge;
+      zona.style.display = 'block';
+    }
+
+    // Filtres en viu: cap botó "Filtrar", tot es refresca sol en canviar/escriure
+    function debounce_(fn, ms) {
+      let h;
+      return function (...args) { clearTimeout(h); h = setTimeout(() => fn.apply(this, args), ms); };
+    }
+
+    document.getElementById('filtre-client').addEventListener('change', carregarMaquines);
+    document.getElementById('filtre-admin-any').addEventListener('change', carregarMaquines);
+    document.getElementById('filtre-admin-text').addEventListener('input', function () {
+      if (maquinesCache_) pintarMaquines(filtrarMaquinesText_(maquinesCache_));
+    });
+
+    document.getElementById('filtre-any').addEventListener('change', carregarProduccio);
+    document.getElementById('filtre-mes').addEventListener('change', carregarProduccio);
+    document.getElementById('filtre-referencia').addEventListener('change', carregarProduccio);
+    document.getElementById('filtre-torn').addEventListener('click', function (event) {
+      const boto = event.target.closest('[data-torn]');
+      if (!boto) return;
+      boto.classList.toggle('actiu');
+      carregarProduccio(true);
+    });
+
+    document.getElementById('filtre-desde').addEventListener('change', () => carregarFitxa(maquinaActual));
+    document.getElementById('filtre-fins').addEventListener('change', () => carregarFitxa(maquinaActual));
+    document.getElementById('filtre-any-h').addEventListener('change', carregarHistoric_);
+    document.getElementById('filtre-mes-h').addEventListener('change', carregarHistoric_);
+    document.getElementById('filtre-torn-h').addEventListener('click', function (event) {
+      const boto = event.target.closest('[data-torn]');
+      if (!boto) return;
+      boto.classList.toggle('actiu');
+      carregarHistoric_();
+    });
+
+    document.getElementById('filtre-projectes-text').addEventListener('input', debounce_(pintarProjectesTaula_, 250));
+  </script>
+  </body>
+</html>
