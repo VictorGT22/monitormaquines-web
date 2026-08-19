@@ -315,9 +315,9 @@
 
         <div class="panell" id="panell-consums">
           <h3 id="titol-consums">Consums</h3>
-          <div class="subtabs" id="tipus-consum">
-            <button type="button" class="nav-tab actiu" data-tipus="aire" id="btn-consum-aire">Consum aire</button>
-            <button type="button" class="nav-tab" data-tipus="electric" id="btn-consum-electric">Consum elèctric</button>
+          <div class="projecte-pills" id="tipus-consum">
+            <button type="button" class="control-pill actiu" data-tipus="aire" id="btn-consum-aire"></button>
+            <button type="button" class="control-pill" data-tipus="electric" id="btn-consum-electric"></button>
           </div>
           <div class="filtres-historic">
             <div>
@@ -328,7 +328,16 @@
               <label id="lbl-fins-c">Fins a</label>
               <input type="text" class="date-input" id="filtre-fins-c" readonly placeholder="dd/mm/aaaa">
             </div>
+            <div id="preu-aire-wrap" class="hidden">
+              <label id="lbl-preu-aire">€/unitat aire</label>
+              <input type="number" step="0.01" min="0" id="input-preu-aire">
+            </div>
+            <div id="preu-electric-wrap" class="hidden">
+              <label id="lbl-preu-electric">€/unitat elèctric</label>
+              <input type="number" step="0.01" min="0" id="input-preu-electric">
+            </div>
           </div>
+          <div class="kpi-row" id="kpi-row-consum-mitjana"></div>
           <div class="grafic-wrap"><canvas id="grafic-consums" height="90"></canvas></div>
         </div>
         </div>
@@ -349,7 +358,9 @@
     let graficProduccio_ = null;
     let graficHistoric_ = null;
     let graficConsums_ = null;
-    let tipusConsumActual_ = 'aire';
+    let tipusConsumActius_ = ['aire'];
+    let preuAire_ = 0, preuElectric_ = 0;
+    let preusConsumCarregats_ = false;
     let historicDiesActuals_ = [];
     let anysHistoricPoblats_ = false;
     let tooltipDiaTimeout_ = null;
@@ -379,6 +390,8 @@
         incidencies_actives_titol: 'Incidències actives', incidencies_cap: 'Cap incidència activa',
         historic_titol: "Històric d'incidències", f_desde: 'Des de', f_finsA: 'Fins a',
         consums_titol: 'Consums', consum_aire: 'Consum aire', consum_electric: 'Consum elèctric',
+        preu_aire: '€/unitat aire', preu_electric: '€/unitat elèctric',
+        mitjana_peca: 'per peça', unitat_aire: 'unitat', unitat_electric: 'kWh',
         taula_codi: 'Codi', taula_missatge: 'Missatge',
         buit_dades: 'Sense dades', buit_paradas: 'Sense paradas en aquest període', buit_incidencies: "Sense incidències en aquest període",
         admin_client: 'Client', admin_totsClients: 'Tots els clients', admin_cercar: 'Cercar per nom...', admin_cercarLbl: 'Cercar',
@@ -402,6 +415,8 @@
         incidencies_actives_titol: 'Incidencias activas', incidencies_cap: 'Sin incidencias activas',
         historic_titol: 'Histórico de incidencias', f_desde: 'Desde', f_finsA: 'Hasta',
         consums_titol: 'Consumos', consum_aire: 'Consumo aire', consum_electric: 'Consumo eléctrico',
+        preu_aire: '€/unidad aire', preu_electric: '€/unidad eléctrico',
+        mitjana_peca: 'por pieza', unitat_aire: 'unidad', unitat_electric: 'kWh',
         taula_codi: 'Código', taula_missatge: 'Mensaje',
         buit_dades: 'Sin datos', buit_paradas: 'Sin paradas en este período', buit_incidencies: 'Sin incidencias en este período',
         admin_client: 'Cliente', admin_totsClients: 'Todos los clientes', admin_cercar: 'Buscar por nombre...', admin_cercarLbl: 'Buscar',
@@ -425,6 +440,8 @@
         incidencies_actives_titol: 'Active alerts', incidencies_cap: 'No active alerts',
         historic_titol: 'Alert history', f_desde: 'From', f_finsA: 'To',
         consums_titol: 'Consumption', consum_aire: 'Air consumption', consum_electric: 'Electric consumption',
+        preu_aire: '€/unit air', preu_electric: '€/unit electric',
+        mitjana_peca: 'per piece', unitat_aire: 'unit', unitat_electric: 'kWh',
         taula_codi: 'Code', taula_missatge: 'Message',
         buit_dades: 'No data', buit_paradas: 'No stops in this period', buit_incidencies: 'No alerts in this period',
         admin_client: 'Client', admin_totsClients: 'All clients', admin_cercar: 'Search by name...', admin_cercarLbl: 'Search',
@@ -447,10 +464,12 @@
       document.getElementById('subnav-historic').textContent = t_('historic_titol');
       document.getElementById('subnav-consums').textContent = t_('consums_titol');
       document.getElementById('titol-consums').textContent = t_('consums_titol');
-      document.getElementById('btn-consum-aire').textContent = t_('consum_aire');
-      document.getElementById('btn-consum-electric').textContent = t_('consum_electric');
+      document.getElementById('btn-consum-aire').innerHTML = ICONA_CABAL_ + t_('consum_aire');
+      document.getElementById('btn-consum-electric').innerHTML = ICONA_CONSUM_ + t_('consum_electric');
       document.getElementById('lbl-desde-c').textContent = t_('f_desde');
       document.getElementById('lbl-fins-c').textContent = t_('f_finsA');
+      document.getElementById('lbl-preu-aire').textContent = t_('preu_aire');
+      document.getElementById('lbl-preu-electric').textContent = t_('preu_electric');
       document.getElementById('lbl-any').textContent = t_('f_any');
       document.getElementById('lbl-mes').textContent = t_('f_mes');
       document.getElementById('lbl-referencia').textContent = t_('f_referencia');
@@ -567,6 +586,8 @@
       document.getElementById('app-view').classList.remove('hidden');
       document.getElementById('admin-filtres').classList.toggle('hidden', !esAdmin_);
       document.getElementById('admin-nav').classList.toggle('hidden', !esAdmin_);
+      document.getElementById('preu-aire-wrap').classList.toggle('hidden', !esAdmin_);
+      document.getElementById('preu-electric-wrap').classList.toggle('hidden', !esAdmin_);
       aplicarIdioma_();
       if (esAdmin_) carregarFiltresAdmin_();
       carregarMaquines();
@@ -1310,8 +1331,8 @@
       document.querySelectorAll('#filtre-torn-h .filtre-torn-btn.actiu')
         .forEach(boto => boto.classList.remove('actiu'));
       canviarModeProduccio_('avui');
-      tipusConsumActual_ = 'aire';
-      document.querySelectorAll('#tipus-consum .nav-tab').forEach(b => b.classList.toggle('actiu', b.dataset.tipus === 'aire'));
+      tipusConsumActius_ = ['aire'];
+      document.querySelectorAll('#tipus-consum .control-pill').forEach(b => b.classList.toggle('actiu', b.dataset.tipus === 'aire'));
       document.getElementById('filtre-desde-c').value = '';
       document.getElementById('filtre-fins-c').value = '';
       document.getElementById('home-view').classList.add('hidden');
@@ -1506,31 +1527,82 @@
         .getFitxaMaquina(token, maquinaActual, desde, fins, filtres);
     }
 
+    const COLORS_CONSUM_ = { aire: '#4da3ff', electric: '#f6c453' };
+
+    function carregarPreusConsum_(llavorsRenderitzar) {
+      google.script.run
+        .withSuccessHandler(function (resposta) {
+          preuAire_ = Number(resposta.aire) || 0;
+          preuElectric_ = Number(resposta.electric) || 0;
+          preusConsumCarregats_ = true;
+          document.getElementById('input-preu-aire').value = preuAire_ || '';
+          document.getElementById('input-preu-electric').value = preuElectric_ || '';
+          if (llavorsRenderitzar) carregarConsums_();
+        })
+        .withFailureHandler(errorSessio_)
+        .getPreusConsum(token);
+    }
+
+    function guardarPreusConsum_() {
+      preuAire_ = parseFloat(document.getElementById('input-preu-aire').value) || 0;
+      preuElectric_ = parseFloat(document.getElementById('input-preu-electric').value) || 0;
+      google.script.run
+        .withSuccessHandler(function () { carregarConsums_(); })
+        .withFailureHandler(errorSessio_)
+        .setPreusConsum(token, preuAire_, preuElectric_);
+    }
+
     function carregarConsums_() {
+      if (!preusConsumCarregats_) { carregarPreusConsum_(true); return; }
       const dataInici = document.getElementById('filtre-desde-c').value || null;
       const dataFi = document.getElementById('filtre-fins-c').value || null;
+      if (!tipusConsumActius_.length) { renderGraficConsums_({ consumPerTipus: {}, totalPerTipus: {}, totalPecesBones: 0, produccioPerDia: [] }); return; }
       google.script.run
         .withSuccessHandler(function (resposta) { renderGraficConsums_(JSON.parse(resposta)); })
         .withFailureHandler(errorSessio_)
-        .getConsums(token, maquinaActual, tipusConsumActual_, dataInici, dataFi);
+        .getConsums(token, maquinaActual, tipusConsumActius_, dataInici, dataFi);
+    }
+
+    function pintarKpiConsumMitjana_(dades) {
+      const cont = document.getElementById('kpi-row-consum-mitjana');
+      const preus = { aire: preuAire_, electric: preuElectric_ };
+      const etiquetes = { aire: t_('consum_aire'), electric: t_('consum_electric') };
+      const unitats = { aire: t_('unitat_aire'), electric: t_('unitat_electric') };
+      const peces = dades.totalPecesBones || 0;
+      cont.innerHTML = tipusConsumActius_.map(function (tipus) {
+        const total = (dades.totalPerTipus && dades.totalPerTipus[tipus]) || 0;
+        const perPeca = peces ? total / peces : 0;
+        const preu = preus[tipus] || 0;
+        const costPerPeca = perPeca * preu;
+        const valor = formatarNumero_(Math.round(perPeca * 100) / 100) + ' ' + unitats[tipus] + ' / ' + t_('mitjana_peca');
+        const sota = preu ? (costPerPeca.toFixed(3) + ' € / ' + t_('mitjana_peca')) : etiquetes[tipus];
+        return `<div class="kpi"><div class="valor">${valor}</div><div class="etiqueta">${sota}</div></div>`;
+      }).join('') || `<div class="empty-state">${t_('buit_dades')}</div>`;
     }
 
     function renderGraficConsums_(dades) {
       const ctx = document.getElementById('grafic-consums');
-      const etiquetesData = [...new Set([].concat(
-        dades.consumPerDia.map(d => d.data),
-        dades.produccioPerDia.map(d => d.data)
-      ))].sort();
+      pintarKpiConsumMitjana_(dades);
+      const totsDiesConsum = tipusConsumActius_.flatMap(t => (dades.consumPerTipus[t] || []).map(d => d.data));
+      const etiquetesData = [...new Set(totsDiesConsum.concat(dades.produccioPerDia.map(d => d.data)))].sort();
       const etiquetes = etiquetesData.map(formatarData_);
-      const consumPerData = {};
-      dades.consumPerDia.forEach(d => { consumPerData[d.data] = d.valor; });
       const produccioPerData = {};
       dades.produccioPerDia.forEach(d => { produccioPerData[d.data] = d.pecesBones; });
-      const etiquetaConsum = tipusConsumActual_ === 'electric' ? t_('consum_electric') : t_('consum_aire');
-      const datasets = [
-        { label: etiquetaConsum, data: etiquetesData.map(d => consumPerData[d] || 0), borderColor: '#4da3ff', backgroundColor: 'rgba(77,163,255,.12)', tension: .3, fill: true, pointRadius: 2, yAxisID: 'yConsum' },
-        { label: t_('kpi_peces'), data: etiquetesData.map(d => produccioPerData[d] || 0), borderColor: '#34d17a', backgroundColor: 'transparent', tension: .3, fill: false, pointRadius: 2, yAxisID: 'yProduccio' }
-      ];
+
+      const datasets = tipusConsumActius_.map(function (tipus) {
+        const perData = {};
+        (dades.consumPerTipus[tipus] || []).forEach(d => { perData[d.data] = d.valor; });
+        const etiquetaConsum = tipus === 'electric' ? t_('consum_electric') : t_('consum_aire');
+        return {
+          label: etiquetaConsum, data: etiquetesData.map(d => perData[d] || 0),
+          borderColor: COLORS_CONSUM_[tipus], backgroundColor: COLORS_CONSUM_[tipus] + '20',
+          tension: .3, fill: true, pointRadius: 2, yAxisID: 'yConsum'
+        };
+      });
+      datasets.push({
+        label: t_('kpi_peces'), data: etiquetesData.map(d => produccioPerData[d] || 0),
+        borderColor: '#34d17a', backgroundColor: 'transparent', tension: .3, fill: false, pointRadius: 2, yAxisID: 'yProduccio'
+      });
 
       if (graficConsums_) {
         graficConsums_.data.labels = etiquetes;
@@ -2006,12 +2078,15 @@
     document.getElementById('tipus-consum').addEventListener('click', function (event) {
       const boto = event.target.closest('[data-tipus]');
       if (!boto) return;
-      tipusConsumActual_ = boto.dataset.tipus;
-      document.querySelectorAll('#tipus-consum .nav-tab').forEach(b => b.classList.toggle('actiu', b === boto));
+      const tipus = boto.dataset.tipus;
+      boto.classList.toggle('actiu');
+      tipusConsumActius_ = Array.from(document.querySelectorAll('#tipus-consum .control-pill.actiu')).map(b => b.dataset.tipus);
       carregarConsums_();
     });
     document.getElementById('filtre-desde-c').addEventListener('click', function () { obrirDatePicker_(this); });
     document.getElementById('filtre-fins-c').addEventListener('click', function () { obrirDatePicker_(this); });
+    document.getElementById('input-preu-aire').addEventListener('change', guardarPreusConsum_);
+    document.getElementById('input-preu-electric').addEventListener('change', guardarPreusConsum_);
     document.getElementById('filtre-desde-c').addEventListener('change', carregarConsums_);
     document.getElementById('filtre-fins-c').addEventListener('change', carregarConsums_);
 
