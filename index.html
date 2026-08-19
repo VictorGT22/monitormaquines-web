@@ -325,6 +325,7 @@
     const DICC = {
       ca: {
         sortir: 'Sortir', totesMaquines: 'Totes les màquines', senseImatge: 'Sense imatge',
+        chip_postamarxa: 'Posta en marxa — no visible al client',
         estat_marxa: 'En marxa', estat_alarma: 'En alarma', estat_parada: 'Parada', estat_incomunicada: 'Incomunicada', estat_desactivada: 'Desactivada',
         barra_produccio: 'Producció', barra_alarma: 'Alarma', barra_parada: 'Parada',
         produccio_titol: 'Producció',
@@ -345,6 +346,7 @@
       },
       es: {
         sortir: 'Salir', totesMaquines: 'Todas las máquinas', senseImatge: 'Sin imagen',
+        chip_postamarxa: 'Puesta en marcha — no visible para el cliente',
         estat_marxa: 'En marcha', estat_alarma: 'En alarma', estat_parada: 'Parada', estat_incomunicada: 'Incomunicada', estat_desactivada: 'Desactivada',
         barra_produccio: 'Producción', barra_alarma: 'Alarma', barra_parada: 'Parada',
         produccio_titol: 'Producción',
@@ -365,6 +367,7 @@
       },
       en: {
         sortir: 'Sign out', totesMaquines: 'All machines', senseImatge: 'No image',
+        chip_postamarxa: 'Commissioning — not visible to client',
         estat_marxa: 'Running', estat_alarma: 'Alarm', estat_parada: 'Stopped', estat_incomunicada: 'Offline', estat_desactivada: 'Disabled',
         barra_produccio: 'Production', barra_alarma: 'Alarm', barra_parada: 'Stopped',
         produccio_titol: 'Production',
@@ -508,8 +511,6 @@
       carregarMaquines();
       iniciarPollVersio_();
       if (esAdmin_) precarregarPestanyesAdmin_();
-      if (esAdmin_) { google.script.run.withSuccessHandler(function () {}).withFailureHandler(function () {}).simularDadesClient_temp('TECAN'); }
-      if (esAdmin_) { google.script.run.withSuccessHandler(function () {}).withFailureHandler(function () {}).simularHistoricIncidencies_temp('TECAN'); }
       if (esNovaSessio) { try { localStorage.removeItem('monitor_vista'); } catch (e) {} }
       else restaurarVistaActual_();
     }
@@ -1133,17 +1134,23 @@
         const desactivada = m.estatActual === 'desactivada';
         const card = document.createElement('div');
         card.className = 'maquina-card' + (incomunicada ? ' incomunicada' : '') + (desactivada ? ' desactivada' : '');
-        if (!incomunicada && !desactivada) card.onclick = () => obrirFitxa(m.machineId);
+        if (!incomunicada && !desactivada) {
+          card.onclick = () => obrirFitxa(m.machineId);
+          card.tabIndex = 0;
+          card.setAttribute('role', 'button');
+          card.setAttribute('aria-label', m.nom);
+          card.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); obrirFitxa(m.machineId); } };
+        }
         card.innerHTML = `
           <div class="img-placeholder">
-            ${m.imatgeUrl ? `<img src="${m.imatgeUrl}">` : t_('senseImatge')}
+            ${m.imatgeUrl ? `<img src="${m.imatgeUrl}" alt="${escHtml_(m.nom)}">` : t_('senseImatge')}
             <div class="img-badge">${badgeHtml_(m.estatActual)}</div>
           </div>
           <div class="maquina-info">
             <div class="maquina-top">
               ${m.clientNom ? `<div class="client-tag">${m.clientNom}</div>` : ''}
               <span class="nom">${m.nom}</span>
-              ${m.visiblePelClient === false ? '<span class="chip-postamarxa">Posta en marxa — no visible al client</span>' : ''}
+              ${m.visiblePelClient === false ? `<span class="chip-postamarxa">${t_('chip_postamarxa')}</span>` : ''}
             </div>
             <div class="barres-dades">
               ${barraHtml_(t_('barra_produccio'), 'fill-produccio', m.horesProduccio)}
