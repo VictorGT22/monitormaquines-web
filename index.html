@@ -1574,7 +1574,7 @@
         const perPeca = peces ? total / peces : 0;
         const preu = preus[tipus] || 0;
         const costPerPeca = perPeca * preu;
-        const valor = formatarNumero_(Math.round(perPeca * 100) / 100) + ' ' + unitats[tipus] + ' / ' + t_('mitjana_peca');
+        const valor = formatarNumero_(perPeca, 2) + ' ' + unitats[tipus] + ' / ' + t_('mitjana_peca');
         const sota = preu ? (costPerPeca.toFixed(3) + ' € / ' + t_('mitjana_peca')) : etiquetes[tipus];
         return `<div class="kpi"><div class="valor">${valor}</div><div class="etiqueta">${sota}</div></div>`;
       }).join('') || `<div class="empty-state">${t_('buit_dades')}</div>`;
