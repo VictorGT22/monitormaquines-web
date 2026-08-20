@@ -178,6 +178,7 @@
             <thead><tr>
               <th id="th-sessio-usuari">Usuari</th><th id="th-sessio-client">Client</th>
               <th id="th-sessio-actius">Dispositius actius</th><th id="th-sessio-detall">Dispositius</th>
+              <th id="th-sessio-ubicacio">Ubicació</th><th id="th-sessio-risc">Risc xarxa</th>
               <th id="th-sessio-activitat">Última activitat</th>
             </tr></thead>
             <tbody id="sessions-usuaris-taula"></tbody>
@@ -307,7 +308,10 @@
             </div>
           </div>
           <div class="grafic-wrap"><canvas id="grafic-produccio" height="90"></canvas></div>
-          <div class="taula-scroll">
+          <div class="produccio-taula-head">
+            <button type="button" class="secondary-btn" id="btn-toggle-produccio-taula">Mostrar taula</button>
+          </div>
+          <div class="taula-scroll hidden" id="produccio-taula-wrap">
             <table>
               <thead><tr>
                 <th id="th-dia">Dia</th><th id="th-referencia" class="hidden">Referència</th><th id="th-pecesbones">Peces bones</th><th id="th-merma">Merma</th><th id="th-actiu">Actiu (min)</th>
@@ -471,7 +475,8 @@
         preu_aire: '€/unitat aire', preu_electric: '€/unitat elèctric',
         mitjana_peca: 'per peça', unitat_aire: 'unitat', unitat_electric: 'kWh',
         cronologia_titol: 'Cronologia', cronologia_carregant: 'Carregant cronologia…', cronologia_error: 'No s’ha pogut carregar la cronologia', cronologia_durada: 'Durada',
-        dispositius_titol: 'Dispositius', dispositius_connectats: 'Connectats', dispositius_inactius: 'Inactius', dispositius_total: 'Total', dispositius_maquina: 'Màquina', dispositius_client: 'Client', dispositius_estat: 'Estat actual', dispositius_inactiu_5d: 'Última inactivitat', dispositius_ultima_connexio: 'Última connexió', dispositius_carregant: 'Carregant dispositius…', dispositius_error: 'No s’han pogut carregar els dispositius', dispositius_usuaris_titol: 'Dispositius actius per usuari', dispositius_maquines_titol: 'Connectivitat de les màquines', dispositius_usuari: 'Usuari', dispositius_actius: 'Dispositius actius', dispositius_detall: 'Dispositius', dispositius_ultima_activitat: 'Última activitat', dispositius_usuaris_actius: 'Usuaris actius', alerta_caiguda_multiple: 'Alerta: {n} màquines han quedat incomunicades simultàniament.', dispositius_auditoria_titol: 'Auditoria de caigudes', dispositius_auditoria_buida: 'Encara no hi ha caigudes verificades en aquesta finestra.', dispositius_auditoria_ultima: 'Última caiguda verificada', dispositius_auditoria_simultania: 'Última caiguda simultània', dispositius_auditoria_global: 'Possible caiguda global', dispositius_auditoria_individual: 'Caiguda individual', dispositius_auditoria_plural: '{n} màquines', dispositius_auditoria_origen: 'Origen', dispositius_auditoria_tipus: 'Tipus', dispositius_auditoria_finestra: 'Finestra', dispositius_origen_heartbeat_gap: 'Tall de heartbeat', dispositius_origen_deploy_restart: 'Reinici o desplegament del backend',
+        produccio_mostrar_taula: 'Mostrar taula', produccio_amagar_taula: 'Amagar taula',
+        dispositius_titol: 'Dispositius', dispositius_connectats: 'Connectats', dispositius_inactius: 'Inactius', dispositius_total: 'Total', dispositius_maquina: 'Màquina', dispositius_client: 'Client', dispositius_estat: 'Estat actual', dispositius_inactiu_5d: 'Última inactivitat', dispositius_ultima_connexio: 'Última connexió', dispositius_carregant: 'Carregant dispositius…', dispositius_error: 'No s’han pogut carregar els dispositius', dispositius_usuaris_titol: 'Dispositius actius per usuari', dispositius_maquines_titol: 'Connectivitat de les màquines', dispositius_usuari: 'Usuari', dispositius_actius: 'Dispositius actius', dispositius_detall: 'Dispositius', dispositius_ultima_activitat: 'Última activitat', dispositius_ubicacio: 'Ubicació aprox.', dispositius_risc_xarxa: 'Risc xarxa', dispositius_usuaris_actius: 'Usuaris actius', alerta_caiguda_multiple: 'Alerta: {n} màquines han quedat incomunicades simultàniament.', dispositius_auditoria_titol: 'Auditoria de caigudes', dispositius_auditoria_buida: 'Encara no hi ha caigudes verificades en aquesta finestra.', dispositius_auditoria_ultima: 'Última caiguda verificada', dispositius_auditoria_simultania: 'Última caiguda simultània', dispositius_auditoria_global: 'Possible caiguda global', dispositius_auditoria_individual: 'Caiguda individual', dispositius_auditoria_plural: '{n} màquines', dispositius_auditoria_origen: 'Origen', dispositius_auditoria_tipus: 'Tipus', dispositius_auditoria_finestra: 'Finestra', dispositius_origen_heartbeat_gap: 'Tall de heartbeat', dispositius_origen_deploy_restart: 'Reinici o desplegament del backend',
         cronologia_producint: 'Produint', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada', cronologia_incomunicada: 'Incomunicada',
         taula_codi: 'Codi', taula_missatge: 'Missatge',
         buit_dades: 'Sense dades', buit_paradas: 'Sense paradas en aquest període', buit_incidencies: "Sense incidències en aquest període",
@@ -499,7 +504,8 @@
         preu_aire: '€/unidad aire', preu_electric: '€/unidad eléctrico',
         mitjana_peca: 'por pieza', unitat_aire: 'unidad', unitat_electric: 'kWh',
         cronologia_titol: 'Cronología', cronologia_carregant: 'Cargando cronología…', cronologia_error: 'No se ha podido cargar la cronología', cronologia_durada: 'Duración',
-        dispositius_titol: 'Dispositivos', dispositius_connectats: 'Conectados', dispositius_inactius: 'Inactivos', dispositius_total: 'Total', dispositius_maquina: 'Máquina', dispositius_client: 'Cliente', dispositius_estat: 'Estado actual', dispositius_inactiu_5d: 'Última inactividad', dispositius_ultima_connexio: 'Última conexión', dispositius_carregant: 'Cargando dispositivos…', dispositius_error: 'No se han podido cargar los dispositivos', dispositius_usuaris_titol: 'Dispositivos activos por usuario', dispositius_maquines_titol: 'Conectividad de las máquinas', dispositius_usuari: 'Usuario', dispositius_actius: 'Dispositivos activos', dispositius_detall: 'Dispositivos', dispositius_ultima_activitat: 'Última actividad', dispositius_usuaris_actius: 'Usuarios activos', alerta_caiguda_multiple: 'Alerta: {n} máquinas han quedado incomunicadas simultáneamente.', dispositius_auditoria_titol: 'Auditoría de caídas', dispositius_auditoria_buida: 'Aún no hay caídas verificadas en esta ventana.', dispositius_auditoria_ultima: 'Última caída verificada', dispositius_auditoria_simultania: 'Última caída simultánea', dispositius_auditoria_global: 'Posible caída global', dispositius_auditoria_individual: 'Caída individual', dispositius_auditoria_plural: '{n} máquinas', dispositius_auditoria_origen: 'Origen', dispositius_auditoria_tipus: 'Tipo', dispositius_auditoria_finestra: 'Ventana', dispositius_origen_heartbeat_gap: 'Corte de heartbeat', dispositius_origen_deploy_restart: 'Reinicio o despliegue del backend',
+        produccio_mostrar_taula: 'Mostrar tabla', produccio_amagar_taula: 'Ocultar tabla',
+        dispositius_titol: 'Dispositivos', dispositius_connectats: 'Conectados', dispositius_inactius: 'Inactivos', dispositius_total: 'Total', dispositius_maquina: 'Máquina', dispositius_client: 'Cliente', dispositius_estat: 'Estado actual', dispositius_inactiu_5d: 'Última inactividad', dispositius_ultima_connexio: 'Última conexión', dispositius_carregant: 'Cargando dispositivos…', dispositius_error: 'No se han podido cargar los dispositivos', dispositius_usuaris_titol: 'Dispositivos activos por usuario', dispositius_maquines_titol: 'Conectividad de las máquinas', dispositius_usuari: 'Usuario', dispositius_actius: 'Dispositivos activos', dispositius_detall: 'Dispositivos', dispositius_ultima_activitat: 'Última actividad', dispositius_ubicacio: 'Ubicación aprox.', dispositius_risc_xarxa: 'Riesgo red', dispositius_usuaris_actius: 'Usuarios activos', alerta_caiguda_multiple: 'Alerta: {n} máquinas han quedado incomunicadas simultáneamente.', dispositius_auditoria_titol: 'Auditoría de caídas', dispositius_auditoria_buida: 'Aún no hay caídas verificadas en esta ventana.', dispositius_auditoria_ultima: 'Última caída verificada', dispositius_auditoria_simultania: 'Última caída simultánea', dispositius_auditoria_global: 'Posible caída global', dispositius_auditoria_individual: 'Caída individual', dispositius_auditoria_plural: '{n} máquinas', dispositius_auditoria_origen: 'Origen', dispositius_auditoria_tipus: 'Tipo', dispositius_auditoria_finestra: 'Ventana', dispositius_origen_heartbeat_gap: 'Corte de heartbeat', dispositius_origen_deploy_restart: 'Reinicio o despliegue del backend',
         cronologia_producint: 'Produciendo', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada', cronologia_incomunicada: 'Incomunicada',
         taula_codi: 'Código', taula_missatge: 'Mensaje',
         buit_dades: 'Sin datos', buit_paradas: 'Sin paradas en este período', buit_incidencies: 'Sin incidencias en este período',
@@ -527,7 +533,8 @@
         preu_aire: '€/unit air', preu_electric: '€/unit electric',
         mitjana_peca: 'per piece', unitat_aire: 'unit', unitat_electric: 'kWh',
         cronologia_titol: 'Timeline', cronologia_carregant: 'Loading timeline…', cronologia_error: 'The timeline could not be loaded', cronologia_durada: 'Duration',
-        dispositius_titol: 'Devices', dispositius_connectats: 'Connected', dispositius_inactius: 'Inactive', dispositius_total: 'Total', dispositius_maquina: 'Machine', dispositius_client: 'Client', dispositius_estat: 'Current status', dispositius_inactiu_5d: 'Last inactivity', dispositius_ultima_connexio: 'Last connection', dispositius_carregant: 'Loading devices…', dispositius_error: 'The devices could not be loaded', dispositius_usuaris_titol: 'Active devices per user', dispositius_maquines_titol: 'Machine connectivity', dispositius_usuari: 'User', dispositius_actius: 'Active devices', dispositius_detall: 'Devices', dispositius_ultima_activitat: 'Last activity', dispositius_usuaris_actius: 'Active users', alerta_caiguda_multiple: 'Alert: {n} machines went offline simultaneously.', dispositius_auditoria_titol: 'Drop audit', dispositius_auditoria_buida: 'There are no verified drops in this window yet.', dispositius_auditoria_ultima: 'Latest verified drop', dispositius_auditoria_simultania: 'Latest simultaneous drop', dispositius_auditoria_global: 'Possible global outage', dispositius_auditoria_individual: 'Individual drop', dispositius_auditoria_plural: '{n} machines', dispositius_auditoria_origen: 'Source', dispositius_auditoria_tipus: 'Type', dispositius_auditoria_finestra: 'Window', dispositius_origen_heartbeat_gap: 'Heartbeat gap', dispositius_origen_deploy_restart: 'Backend restart or deploy',
+        produccio_mostrar_taula: 'Show table', produccio_amagar_taula: 'Hide table',
+        dispositius_titol: 'Devices', dispositius_connectats: 'Connected', dispositius_inactius: 'Inactive', dispositius_total: 'Total', dispositius_maquina: 'Machine', dispositius_client: 'Client', dispositius_estat: 'Current status', dispositius_inactiu_5d: 'Last inactivity', dispositius_ultima_connexio: 'Last connection', dispositius_carregant: 'Loading devices…', dispositius_error: 'The devices could not be loaded', dispositius_usuaris_titol: 'Active devices per user', dispositius_maquines_titol: 'Machine connectivity', dispositius_usuari: 'User', dispositius_actius: 'Active devices', dispositius_detall: 'Devices', dispositius_ultima_activitat: 'Last activity', dispositius_ubicacio: 'Approx. location', dispositius_risc_xarxa: 'Network risk', dispositius_usuaris_actius: 'Active users', alerta_caiguda_multiple: 'Alert: {n} machines went offline simultaneously.', dispositius_auditoria_titol: 'Drop audit', dispositius_auditoria_buida: 'There are no verified drops in this window yet.', dispositius_auditoria_ultima: 'Latest verified drop', dispositius_auditoria_simultania: 'Latest simultaneous drop', dispositius_auditoria_global: 'Possible global outage', dispositius_auditoria_individual: 'Individual drop', dispositius_auditoria_plural: '{n} machines', dispositius_auditoria_origen: 'Source', dispositius_auditoria_tipus: 'Type', dispositius_auditoria_finestra: 'Window', dispositius_origen_heartbeat_gap: 'Heartbeat gap', dispositius_origen_deploy_restart: 'Backend restart or deploy',
         cronologia_producint: 'Producing', cronologia_alarma: 'Alarm', cronologia_parada: 'Stopped', cronologia_incomunicada: 'Offline',
         taula_codi: 'Code', taula_missatge: 'Message',
         buit_dades: 'No data', buit_paradas: 'No stops in this period', buit_incidencies: 'No alerts in this period',
@@ -568,6 +575,8 @@
       document.getElementById('th-sessio-client').textContent = t_('dispositius_client');
       document.getElementById('th-sessio-actius').textContent = t_('dispositius_actius');
       document.getElementById('th-sessio-detall').textContent = t_('dispositius_detall');
+      document.getElementById('th-sessio-ubicacio').textContent = t_('dispositius_ubicacio');
+      document.getElementById('th-sessio-risc').textContent = t_('dispositius_risc_xarxa');
       document.getElementById('th-sessio-activitat').textContent = t_('dispositius_ultima_activitat');
       document.getElementById('th-disp-nom').textContent = t_('dispositius_maquina');
       document.getElementById('th-disp-client').textContent = t_('dispositius_client');
@@ -2386,17 +2395,24 @@
         [t_('dispositius_actius'), totalSessions]
       ].map(kpi => `<div class="kpi"><div class="valor">${kpi[1]}</div><div class="etiqueta">${kpi[0]}</div></div>`).join('');
       document.getElementById('sessions-usuaris-taula').innerHTML = sessionsUsuaris.map(function (u) {
+        const primerDispositiu = (u.dispositius || [])[0] || {};
+        const ubicacio = (primerDispositiu.ubicacioAprox || '') + ((primerDispositiu.ip || '') ? ` · ${primerDispositiu.ip}` : '');
+        const risc = (u.dispositius || []).map(d => d.seguretatIp && d.seguretatIp.etiqueta_risc).filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' · ');
         const detall = `<div class="sessions-dispositius">` + (u.dispositius || []).map(function (d) {
-          return `<span class="cronologia-chip"><i style="background:#34d17a"></i>${escHtml_(d.nom || d.plataforma || '')}</span>`;
+          const meta = [d.ubicacioAprox, d.proveidorXarxa, d.ip].filter(Boolean).join(' · ');
+          const riscDispositiu = d.seguretatIp && d.seguretatIp.etiqueta_risc ? `<span class="session-risk">${escHtml_(d.seguretatIp.etiqueta_risc)}</span>` : '';
+          return `<div class="session-device-line"><span class="cronologia-chip"><i style="background:#34d17a"></i>${escHtml_(d.nom || d.plataforma || '')}</span>${riscDispositiu}${meta ? `<div class="session-device-meta">${escHtml_(meta)}</div>` : ''}</div>`;
         }).join('') + `</div>`;
         return `<tr>
           <td>${escHtml_(u.email)}</td>
           <td>${escHtml_(u.clientNom || '')}</td>
           <td><strong>${Number(u.dispositiusActius || 0)}</strong></td>
           <td>${detall}</td>
+          <td>${escHtml_(ubicacio || '—')}</td>
+          <td>${escHtml_(risc || '—')}</td>
           <td>${formatarDataHoraMadrid_(u.ultimaActivitat)}</td>
         </tr>`;
-      }).join('') || `<tr><td colspan="5" class="empty-state">${t_('buit_dades')}</td></tr>`;
+      }).join('') || `<tr><td colspan="7" class="empty-state">${t_('buit_dades')}</td></tr>`;
       const actual = serie.length ? serie[serie.length - 1] : { connectats: 0, inactius: dispositius.length };
       const zonaAuditoria = document.getElementById('dispositius-auditoria');
       if (resumAuditoria && resumAuditoria.ultimaCaiguda) {
