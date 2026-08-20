@@ -665,6 +665,15 @@
   .cronologia-lupa-trams { position: relative; height: 30px; margin: 14px 0 10px; background: var(--surface-2); border-radius: 6px; overflow: hidden; }
   .cronologia-lupa-trams span { position: absolute; top: 0; bottom: 0; min-width: 3px; }
   .cronologia-lupa-trams span.actiu { top: 0; bottom: 0; z-index: 2; box-shadow: inset 0 0 0 2px var(--text); }
+  .cronologia-lupa-trams span.cronologia-lupa-cursor {
+    z-index: 4; width: 2px; min-width: 2px; background: var(--text); transform: translateX(-50%);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.45);
+  }
+  .cronologia-lupa-trams span.cronologia-lupa-cursor::before {
+    content: ''; position: absolute; left: 50%; top: 50%; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--text); transform: translate(-50%, -50%);
+    box-shadow: 0 0 0 2px var(--surface);
+  }
   .cronologia-lupa-extra { color: var(--text-muted); font-size: 11px; line-height: 1.25; max-height: 30px; overflow: hidden; }
 
   .taula-scroll {

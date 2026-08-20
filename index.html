@@ -1893,6 +1893,12 @@
           if (d === raw) barra.className = 'actiu';
           trams.appendChild(barra);
         });
+      const cursorMinut = chart.scales.x.getValueForPixel(event.x);
+      const cursorPercent = Math.max(0, Math.min(100, (cursorMinut - iniciVista) / ampleVista * 100));
+      const cursorLupa = document.createElement('span');
+      cursorLupa.className = 'cronologia-lupa-cursor';
+      cursorLupa.style.left = cursorPercent + '%';
+      trams.appendChild(cursorLupa);
 
       const extres = [];
       if (raw.referencies && raw.referencies.length) extres.push(t_('f_referencia') + ': ' + raw.referencies.join(', '));
