@@ -438,6 +438,7 @@
     let pollIntervalId_ = null;
     let presenciaIntervalId_ = null;
     let ultimRefrescDispositius_ = 0;
+    let peticioMaquinesSeq_ = 0;
     let ultimRefrescEstats_ = 0;
     const REFRESC_ESTATS_MS_ = 2000;
 
@@ -777,7 +778,7 @@
             const tocaRecalcularEstats = vistaActual_ === 'maquines' &&
               ara - ultimRefrescEstats_ >= REFRESC_ESTATS_MS_;
             const tocaRefrescarDispositius = vistaActual_ === 'dispositius' &&
-              ara - ultimRefrescDispositius_ >= 30000;
+              ara - ultimRefrescDispositius_ >= 10000;
             if (versioCanviada || tocaRecalcularEstats || tocaRefrescarDispositius) {
               ultimRefrescEstats_ = ara;
               if (tocaRefrescarDispositius) ultimRefrescDispositius_ = ara;
@@ -1350,6 +1351,7 @@
     });
 
     function carregarMaquines(silenciós) {
+      const seq = ++peticioMaquinesSeq_;
       // Client/any/text es filtren 100% al client (veure filtrarMaquinesText_):
       // fer-ho al servidor disparava un RPC sencer (amb recàlcul de producció,
       // parades, incidències...) cada cop que es tocava un desplegable i anava
@@ -1361,6 +1363,7 @@
       }
       google.script.run
         .withSuccessHandler(function (maquines) {
+          if (seq !== peticioMaquinesSeq_) return;
           // Evita repintar (i re-disparar l'animació d'entrada de les
           // targetes) quan el poll silenciós detecta un canvi a l'app
           // però les dades d'aquesta vista concreta són exactament les
