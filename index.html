@@ -452,6 +452,9 @@
     let presenciaIntervalId_ = null;
     let ultimRefrescDispositius_ = 0;
     let peticioMaquinesSeq_ = 0;
+    let carregaMaquinesEnCurs_ = false;
+    let recarregaMaquinesPendent_ = false;
+    let recarregaMaquinesSilenciosa_ = true;
     let ultimRefrescEstats_ = 0;
     const REFRESC_ESTATS_MS_ = 2000;
 
@@ -1378,6 +1381,13 @@
     });
 
     function carregarMaquines(silenciós) {
+      if (carregaMaquinesEnCurs_) {
+        recarregaMaquinesPendent_ = true;
+        recarregaMaquinesSilenciosa_ = recarregaMaquinesSilenciosa_ && !!silenciós;
+        if (!silenciós && !maquinesCache_) pintarEsquelet_('maquines-grid', 210);
+        return;
+      }
+      carregaMaquinesEnCurs_ = true;
       const seq = ++peticioMaquinesSeq_;
       // Client/any/text es filtren 100% al client (veure filtrarMaquinesText_):
       // fer-ho al servidor disparava un RPC sencer (amb recàlcul de producció,
@@ -1390,7 +1400,16 @@
       }
       google.script.run
         .withSuccessHandler(function (maquines) {
-          if (seq !== peticioMaquinesSeq_) return;
+          carregaMaquinesEnCurs_ = false;
+          if (seq !== peticioMaquinesSeq_) {
+            if (recarregaMaquinesPendent_) {
+              const següentSilenciós = recarregaMaquinesSilenciosa_;
+              recarregaMaquinesPendent_ = false;
+              recarregaMaquinesSilenciosa_ = true;
+              carregarMaquines(següentSilenciós);
+            }
+            return;
+          }
           try {
             if (!Array.isArray(maquines)) throw new Error('Resposta inesperada a /maquines');
             if (maquinesCache_) {
@@ -1410,8 +1429,19 @@
           } catch (e) {
             errorSessio_(e);
           }
+          if (recarregaMaquinesPendent_) {
+            const següentSilenciós = recarregaMaquinesSilenciosa_;
+            recarregaMaquinesPendent_ = false;
+            recarregaMaquinesSilenciosa_ = true;
+            carregarMaquines(següentSilenciós);
+          }
         })
-        .withFailureHandler(errorSessio_)
+        .withFailureHandler(function (err) {
+          carregaMaquinesEnCurs_ = false;
+          recarregaMaquinesPendent_ = false;
+          recarregaMaquinesSilenciosa_ = true;
+          errorSessio_(err);
+        })
         .getMaquines(token, {});
     }
 
