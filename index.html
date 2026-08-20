@@ -95,6 +95,7 @@
           <button class="nav-tab actiu" id="nav-tab-maquines" onclick="mostrarVista_('maquines')">Màquines</button>
           <button class="nav-tab" id="nav-tab-projectes" onclick="mostrarVista_('projectes')">Projectes ERP</button>
           <button class="nav-tab" id="nav-tab-clients" onclick="mostrarVista_('clients')">Clients</button>
+          <button class="nav-tab" id="nav-tab-dispositius" onclick="mostrarVista_('dispositius')">Dispositius</button>
         </nav>
       </div>
       <button onclick="ferLogout()" id="btn-sortir">Sortir</button>
@@ -166,6 +167,20 @@
 
       <div id="clients-view" class="hidden">
         <div id="clients-grid"></div>
+      </div>
+
+      <div id="dispositius-view" class="hidden">
+        <div class="cronologia-llegenda" id="dispositius-llegenda"></div>
+        <div class="grafic-wrap"><canvas id="grafic-dispositius" height="110"></canvas></div>
+        <div class="taula-scroll">
+          <table>
+            <thead><tr>
+              <th id="th-disp-nom">Màquina</th><th id="th-disp-client">Client</th><th id="th-disp-estat">Estat actual</th>
+              <th id="th-disp-inactiu">Inactiu (5 dies)</th><th id="th-disp-connexio">Última connexió</th>
+            </tr></thead>
+            <tbody id="dispositius-taula"></tbody>
+          </table>
+        </div>
       </div>
 
       <div id="fitxa-view" class="hidden">
@@ -661,15 +676,18 @@
       document.getElementById('nav-tab-maquines').classList.toggle('actiu', vista === 'maquines');
       document.getElementById('nav-tab-projectes').classList.toggle('actiu', vista === 'projectes');
       document.getElementById('nav-tab-clients').classList.toggle('actiu', vista === 'clients');
+      document.getElementById('nav-tab-dispositius').classList.toggle('actiu', vista === 'dispositius');
       document.getElementById('home-view').classList.toggle('hidden', vista !== 'maquines');
       document.getElementById('fitxa-view').classList.add('hidden');
       document.getElementById('projectes-view').classList.toggle('hidden', vista !== 'projectes');
       document.getElementById('clients-view').classList.toggle('hidden', vista !== 'clients');
+      document.getElementById('dispositius-view').classList.toggle('hidden', vista !== 'dispositius');
       // silenciós=true: si ja hi ha dades en cache d'una visita anterior es
       // pinten a l'instant i la crida real només les substitueix si han canviat.
       if (vista === 'maquines') carregarMaquines(true);
       if (vista === 'projectes') carregarProjectesErp(true);
       if (vista === 'clients') carregarClientsFacturacio_(true);
+      if (vista === 'dispositius') carregarDispositiusLog_();
       desarVistaActual_();
     }
 
@@ -1856,6 +1874,68 @@
         ];
         return `<div class="kpi"><div class="valor" style="font-size:13px">${parts.join(' · ')}</div><div class="etiqueta">${dia.etiqueta}</div></div>`;
       }).join('') || `<div class="empty-state">${t_('buit_dades')}</div>`;
+    }
+
+    let graficDispositius_ = null;
+
+    function carregarDispositiusLog_() {
+      google.script.run
+        .withSuccessHandler(function (resposta) { renderDispositiusLog_(JSON.parse(resposta)); })
+        .withFailureHandler(errorSessio_)
+        .getDispositiusLog(token);
+    }
+
+    function renderDispositiusLog_(dades) {
+      const llegenda = document.getElementById('dispositius-llegenda');
+      llegenda.innerHTML = `
+        <span class="cronologia-chip"><i style="background:#34d17a"></i>Connectats</span>
+        <span class="cronologia-chip"><i style="background:#8a95a5"></i>Inactius</span>`;
+
+      const ctx = document.getElementById('grafic-dispositius');
+      const etiquetes = dades.serie.map(p => {
+        const d = new Date(p.timestamp);
+        return formatarData_(p.timestamp) + ' ' + String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0');
+      });
+      const datasetConnectats = dades.serie.map(p => p.connectats);
+      const datasetInactius = dades.serie.map(p => p.inactius);
+
+      if (graficDispositius_) {
+        graficDispositius_.data.labels = etiquetes;
+        graficDispositius_.data.datasets[0].data = datasetConnectats;
+        graficDispositius_.data.datasets[1].data = datasetInactius;
+        graficDispositius_.update();
+      } else if (typeof Chart !== 'undefined') {
+        graficDispositius_ = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: etiquetes,
+            datasets: [
+              { label: 'Connectats', data: datasetConnectats, borderColor: '#34d17a', backgroundColor: 'rgba(52,209,122,.12)', tension: .2, fill: true, pointRadius: 0, stack: 'a' },
+              { label: 'Inactius', data: datasetInactius, borderColor: '#8a95a5', backgroundColor: 'rgba(138,149,165,.15)', tension: .2, fill: true, pointRadius: 0, stack: 'a' }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: '#8a95a5', maxTicksLimit: 10 }, grid: { color: '#2c343f' } },
+              y: { stacked: true, ticks: { color: '#8a95a5', precision: 0 }, grid: { color: '#2c343f' }, beginAtZero: true }
+            }
+          }
+        });
+      }
+
+      const taula = document.getElementById('dispositius-taula');
+      taula.innerHTML = dades.dispositius.map(function (dis) {
+        return `<tr>
+          <td>${escHtml_(dis.nom)}</td>
+          <td>${escHtml_(dis.clientNom || '')}</td>
+          <td>${badgeHtml_(dis.estatActual)}</td>
+          <td>${dis.horesInactiu.toFixed(1)}h</td>
+          <td>${dis.ultimaConnexio ? formatarDataHora_(dis.ultimaConnexio) : '—'}</td>
+        </tr>`;
+      }).join('') || `<tr><td colspan="5" class="empty-state">${t_('buit_dades')}</td></tr>`;
     }
 
     function pintarProduccio(p) {
