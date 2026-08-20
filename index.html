@@ -437,7 +437,7 @@
         consums_titol: 'Consums', consum_aire: 'Consum aire', consum_electric: 'Consum elèctric',
         preu_aire: '€/unitat aire', preu_electric: '€/unitat elèctric',
         mitjana_peca: 'per peça', unitat_aire: 'unitat', unitat_electric: 'kWh',
-        cronologia_titol: 'Cronologia', cronologia_dia1: 'Dia 1', cronologia_dia2: 'Dia 2 (comparar)', cronologia_carregant: 'Carregant cronologia…', cronologia_error: 'No s’ha pogut carregar la cronologia',
+        cronologia_titol: 'Cronologia', cronologia_dia1: 'Dia 1', cronologia_dia2: 'Dia 2 (comparar)', cronologia_carregant: 'Carregant cronologia…', cronologia_error: 'No s’ha pogut carregar la cronologia', cronologia_durada: 'Durada',
         dispositius_titol: 'Dispositius', dispositius_connectats: 'Connectats', dispositius_inactius: 'Inactius', dispositius_total: 'Total', dispositius_maquina: 'Màquina', dispositius_client: 'Client', dispositius_estat: 'Estat actual', dispositius_inactiu_5d: 'Inactiu (5 dies)', dispositius_ultima_connexio: 'Última connexió', dispositius_carregant: 'Carregant dispositius…', dispositius_error: 'No s’han pogut carregar els dispositius',
         cronologia_producint: 'Produint', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada', cronologia_incomunicada: 'Incomunicada',
         taula_codi: 'Codi', taula_missatge: 'Missatge',
@@ -465,7 +465,7 @@
         consums_titol: 'Consumos', consum_aire: 'Consumo aire', consum_electric: 'Consumo eléctrico',
         preu_aire: '€/unidad aire', preu_electric: '€/unidad eléctrico',
         mitjana_peca: 'por pieza', unitat_aire: 'unidad', unitat_electric: 'kWh',
-        cronologia_titol: 'Cronología', cronologia_dia1: 'Día 1', cronologia_dia2: 'Día 2 (comparar)', cronologia_carregant: 'Cargando cronología…', cronologia_error: 'No se ha podido cargar la cronología',
+        cronologia_titol: 'Cronología', cronologia_dia1: 'Día 1', cronologia_dia2: 'Día 2 (comparar)', cronologia_carregant: 'Cargando cronología…', cronologia_error: 'No se ha podido cargar la cronología', cronologia_durada: 'Duración',
         dispositius_titol: 'Dispositivos', dispositius_connectats: 'Conectados', dispositius_inactius: 'Inactivos', dispositius_total: 'Total', dispositius_maquina: 'Máquina', dispositius_client: 'Cliente', dispositius_estat: 'Estado actual', dispositius_inactiu_5d: 'Inactivo (5 días)', dispositius_ultima_connexio: 'Última conexión', dispositius_carregant: 'Cargando dispositivos…', dispositius_error: 'No se han podido cargar los dispositivos',
         cronologia_producint: 'Produciendo', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada', cronologia_incomunicada: 'Incomunicada',
         taula_codi: 'Código', taula_missatge: 'Mensaje',
@@ -493,7 +493,7 @@
         consums_titol: 'Consumption', consum_aire: 'Air consumption', consum_electric: 'Electric consumption',
         preu_aire: '€/unit air', preu_electric: '€/unit electric',
         mitjana_peca: 'per piece', unitat_aire: 'unit', unitat_electric: 'kWh',
-        cronologia_titol: 'Timeline', cronologia_dia1: 'Day 1', cronologia_dia2: 'Day 2 (compare)', cronologia_carregant: 'Loading timeline…', cronologia_error: 'The timeline could not be loaded',
+        cronologia_titol: 'Timeline', cronologia_dia1: 'Day 1', cronologia_dia2: 'Day 2 (compare)', cronologia_carregant: 'Loading timeline…', cronologia_error: 'The timeline could not be loaded', cronologia_durada: 'Duration',
         dispositius_titol: 'Devices', dispositius_connectats: 'Connected', dispositius_inactius: 'Inactive', dispositius_total: 'Total', dispositius_maquina: 'Machine', dispositius_client: 'Client', dispositius_estat: 'Current status', dispositius_inactiu_5d: 'Inactive (5 days)', dispositius_ultima_connexio: 'Last connection', dispositius_carregant: 'Loading devices…', dispositius_error: 'The devices could not be loaded',
         cronologia_producint: 'Producing', cronologia_alarma: 'Alarm', cronologia_parada: 'Stopped', cronologia_incomunicada: 'Offline',
         taula_codi: 'Code', taula_missatge: 'Message',
@@ -1787,6 +1787,15 @@
       return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
     }
 
+    function formatMinutsHoraPrecisa_(min, ambSegons) {
+      const totalSegons = Math.max(0, Math.min(86400, Math.round(min * 60)));
+      const h = Math.floor(totalSegons / 3600);
+      const m = Math.floor((totalSegons % 3600) / 60);
+      const s = totalSegons % 60;
+      const base = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+      return ambSegons ? base + ':' + String(s).padStart(2, '0') : base;
+    }
+
     const FORMATADOR_CRONOLOGIA_MADRID_ = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit',
       hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
@@ -1809,6 +1818,23 @@
         .filter(p => p.type !== 'literal').map(p => [p.type, Number(p.value)]));
       return String(parts.day).padStart(2, '0') + '/' + String(parts.month).padStart(2, '0') + ' ' +
         String(parts.hour).padStart(2, '0') + ':' + String(parts.minute).padStart(2, '0');
+    }
+
+    // Defensa addicional al client: una repetició consecutiva del mateix estat
+    // és un únic tram encara que provingui de dos registres de l'històric.
+    function fusionarSegmentsCronologia_(segments) {
+      return (segments || []).slice().sort((a, b) => new Date(a.inici) - new Date(b.inici)).reduce((resultat, segment) => {
+        const anterior = resultat[resultat.length - 1];
+        const separacioMs = anterior ? new Date(segment.inici) - new Date(anterior.fi) : Infinity;
+        if (anterior && anterior.estat === segment.estat && separacioMs >= 0 && separacioMs <= 1000) {
+          anterior.fi = segment.fi;
+          anterior.referencies = Array.from(new Set([].concat(anterior.referencies || [], segment.referencies || [])));
+          anterior.alarmes = [].concat(anterior.alarmes || [], segment.alarmes || []);
+        } else {
+          resultat.push(Object.assign({}, segment));
+        }
+        return resultat;
+      }, []);
     }
 
     function carregarCronologia_() {
@@ -1858,7 +1884,8 @@
       const ctx = document.getElementById('grafic-cronologia');
       const dataset = [];
       dies.forEach(function (dia) {
-        (dia.segments || []).forEach(function (s) {
+        dia.segments = fusionarSegmentsCronologia_(dia.segments);
+        dia.segments.forEach(function (s) {
           const minInici = minutsDiaMadrid_(s.inici, dia.dia);
           const minFi = minutsDiaMadrid_(s.fi, dia.dia);
           if (minFi <= minInici) return;
@@ -1875,6 +1902,10 @@
           datasets: [{
             data: dataset,
             backgroundColor: function (c) { return c.raw ? COLORS_ESTAT_[c.raw.estat] : '#4da3ff'; },
+            borderColor: function (c) { return c.raw ? COLORS_ESTAT_[c.raw.estat] : '#4da3ff'; },
+            borderWidth: 0,
+            hoverBorderWidth: 4,
+            minBarLength: 5,
             borderRadius: 3,
             barThickness: 28
           }]
@@ -1882,21 +1913,27 @@
         options: {
           indexAxis: 'y',
           responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'nearest', axis: 'xy', intersect: false },
           plugins: {
             legend: { display: false },
             tooltip: {
               callbacks: {
                 label: function (c) {
-                  return etiquetaEstatCronologia_(c.raw.estat) + ': ' + formatMinutsHora_(c.raw.x[0]) + ' – ' + formatMinutsHora_(c.raw.x[1]);
+                  const duradaMin = c.raw.x[1] - c.raw.x[0];
+                  const precisa = duradaMin < 2;
+                  return etiquetaEstatCronologia_(c.raw.estat) + ': ' + formatMinutsHoraPrecisa_(c.raw.x[0], precisa) + ' – ' + formatMinutsHoraPrecisa_(c.raw.x[1], precisa);
                 },
                 afterLabel: function (c) {
+                  const duradaSegons = Math.max(0, Math.round((c.raw.x[1] - c.raw.x[0]) * 60));
+                  const durada = duradaSegons < 60 ? duradaSegons + ' s' : (duradaSegons / 60).toFixed(1) + ' min';
+                  const extres = [t_('cronologia_durada') + ': ' + durada];
                   if (c.raw.estat === 'marxa' && c.raw.referencies && c.raw.referencies.length) {
-                    return t_('f_referencia') + ': ' + c.raw.referencies.join(', ');
+                    extres.push(t_('f_referencia') + ': ' + c.raw.referencies.join(', '));
                   }
                   if (c.raw.estat === 'alarma' && c.raw.alarmes && c.raw.alarmes.length) {
-                    return c.raw.alarmes.map(a => a.codi + ' — ' + a.missatge);
+                    extres.push.apply(extres, c.raw.alarmes.map(a => a.codi + ' — ' + a.missatge));
                   }
-                  return null;
+                  return extres;
                 }
               }
             }
