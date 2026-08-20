@@ -2206,7 +2206,10 @@
             legend: { display: false },
             tooltip: {
               mode: 'nearest', intersect: true,
-              filter: function (c) { return (c.raw.x[1] - c.raw.x[0]) >= 4; },
+              filter: function (c) {
+                if (!elements.lupa.hidden) return false;
+                return (c.raw.x[1] - c.raw.x[0]) >= 4;
+              },
               callbacks: {
                 label: function (c) {
                   const duradaMin = c.raw.x[1] - c.raw.x[0];
