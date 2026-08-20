@@ -1838,6 +1838,7 @@
           anterior.fi = segment.fi;
           anterior.referencies = Array.from(new Set([].concat(anterior.referencies || [], segment.referencies || [])));
           anterior.alarmes = [].concat(anterior.alarmes || [], segment.alarmes || []);
+          anterior.parades = [].concat(anterior.parades || [], segment.parades || []);
         } else {
           resultat.push(Object.assign({}, segment));
         }
@@ -1845,70 +1846,117 @@
       }, []);
     }
 
+    let lupaTancamentTimeout_ = null;
+
+    function cancelLarTancamentLupa_() {
+      if (lupaTancamentTimeout_) clearTimeout(lupaTancamentTimeout_);
+      lupaTancamentTimeout_ = null;
+    }
+
     function amagarLupaCronologia_() {
+      cancelLarTancamentLupa_();
       document.getElementById('cronologia-lupa').hidden = true;
     }
 
-    function mostrarLupaCronologia_(event, actius, chart) {
-      if (!actius.length) { amagarLupaCronologia_(); return; }
-      const actiu = actius[0];
-      const raw = chart.data.datasets[actiu.datasetIndex].data[actiu.index];
+    function programarTancamentLupa_() {
+      cancelLarTancamentLupa_();
+      lupaTancamentTimeout_ = setTimeout(amagarLupaCronologia_, 3000);
+    }
+
+    function actualitzarInfoLupa_(raw) {
       const duradaMin = raw.x[1] - raw.x[0];
-      if (duradaMin >= 4) { amagarLupaCronologia_(); return; }
-      const element = chart.getDatasetMeta(actiu.datasetIndex).data[actiu.index];
-      const esquerraPx = Math.min(element.base, element.x);
-      const dretaPx = Math.max(element.base, element.x);
-      const margeX = 12;
-      const margeY = Math.max(10, (Number(element.height) || 28) / 2 + 8);
-      if (event.x < esquerraPx - margeX || event.x > dretaPx + margeX || Math.abs(event.y - element.y) > margeY) {
-        amagarLupaCronologia_();
-        return;
-      }
-
-      const lupa = document.getElementById('cronologia-lupa');
-      const canvas = document.getElementById('grafic-cronologia');
-      const wrap = canvas.parentElement;
-      const centre = (raw.x[0] + raw.x[1]) / 2;
-      const marge = Math.max(2, duradaMin * 2);
-      const iniciVista = Math.max(0, centre - marge);
-      const fiVista = Math.min(1440, centre + marge);
-      const ampleVista = Math.max(1 / 60, fiVista - iniciVista);
-
       document.getElementById('cronologia-lupa-estat').textContent = etiquetaEstatCronologia_(raw.estat);
       document.getElementById('cronologia-lupa-hora').textContent =
         formatMinutsHoraPrecisa_(raw.x[0], true) + ' – ' + formatMinutsHoraPrecisa_(raw.x[1], true) +
         ' · ' + t_('cronologia_durada') + ': ' + Math.max(1, Math.round(duradaMin * 60)) + ' s';
-
-      const trams = document.getElementById('cronologia-lupa-trams');
-      trams.innerHTML = '';
-      chart.data.datasets[actiu.datasetIndex].data
-        .filter(d => d.y === raw.y && d.x[0] < fiVista && d.x[1] > iniciVista)
-        .forEach(d => {
-          const barra = document.createElement('span');
-          const esquerra = Math.max(0, (d.x[0] - iniciVista) / ampleVista * 100);
-          const dreta = Math.min(100, (d.x[1] - iniciVista) / ampleVista * 100);
-          barra.style.left = esquerra + '%';
-          barra.style.width = Math.max(2, dreta - esquerra) + '%';
-          barra.style.background = COLORS_ESTAT_[d.estat];
-          if (d === raw) barra.className = 'actiu';
-          trams.appendChild(barra);
-        });
-      const cursorMinut = chart.scales.x.getValueForPixel(event.x);
-      const cursorPercent = Math.max(0, Math.min(100, (cursorMinut - iniciVista) / ampleVista * 100));
-      const cursorLupa = document.createElement('span');
-      cursorLupa.className = 'cronologia-lupa-cursor';
-      cursorLupa.style.left = cursorPercent + '%';
-      trams.appendChild(cursorLupa);
-
       const extres = [];
       if (raw.referencies && raw.referencies.length) extres.push(t_('f_referencia') + ': ' + raw.referencies.join(', '));
       if (raw.alarmes && raw.alarmes.length) extres.push.apply(extres, raw.alarmes.map(a => a.codi + ' — ' + a.missatge));
+      if (raw.parades && raw.parades.length) extres.push.apply(extres, raw.parades.map(p => p.motiu));
       document.getElementById('cronologia-lupa-extra').textContent = extres.join(' · ');
+    }
 
-      const x = Math.max(102, Math.min(wrap.clientWidth - 102, canvas.offsetLeft + event.x));
+    function anarAHistoric_() {
+      const desti = document.getElementById('panell-historic');
+      if (!desti) return;
+      const reduitMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      desti.scrollIntoView({ behavior: reduitMotion ? 'auto' : 'smooth', block: 'start' });
+    }
+
+    function obrirDetallTramCronologia_(raw) {
+      amagarLupaCronologia_();
+      if (raw.estat === 'alarma') anarAHistoric_();
+      else if (raw.estat === 'parada') anarAParades_();
+    }
+
+    function clicarTramCronologia_(event, elements, chart) {
+      const directes = chart.getElementsAtEventForMode(event.native, 'nearest', { intersect: true }, false);
+      if (!directes.length) return;
+      const element = directes[0];
+      const raw = chart.data.datasets[element.datasetIndex].data[element.index];
+      if (raw.estat === 'alarma' || raw.estat === 'parada') obrirDetallTramCronologia_(raw);
+    }
+
+    function mostrarLupaCronologia_(event, actius, chart) {
+      if (!actius.length) { programarTancamentLupa_(); return; }
+      const actiu = actius[0];
+      const rawProper = chart.data.datasets[actiu.datasetIndex].data[actiu.index];
+      const directes = chart.getElementsAtEventForMode(event.native, 'nearest', { intersect: true }, false);
+      document.getElementById('grafic-cronologia').style.cursor = directes.length &&
+        ['alarma', 'parada'].includes(chart.data.datasets[directes[0].datasetIndex].data[directes[0].index].estat) ? 'pointer' : 'default';
+      const element = chart.getDatasetMeta(actiu.datasetIndex).data[actiu.index];
+      if (Math.abs(event.y - element.y) > Math.max(16, (Number(element.height) || 28) / 2 + 8)) {
+        programarTancamentLupa_();
+        return;
+      }
+
+      const cursorMinut = chart.scales.x.getValueForPixel(event.x);
+      const iniciVista = Math.max(0, Math.min(1400, cursorMinut - 20));
+      const fiVista = iniciVista + 40;
+      const dadesFila = chart.data.datasets[actiu.datasetIndex].data.filter(d => d.y === rawProper.y);
+      const curts = dadesFila.filter(d => (d.x[1] - d.x[0]) < 4 && d.x[0] < fiVista && d.x[1] > iniciVista);
+      if (!curts.length) { programarTancamentLupa_(); return; }
+      cancelLarTancamentLupa_();
+
+      const seleccionat = curts.slice().sort((a, b) =>
+        Math.abs((a.x[0] + a.x[1]) / 2 - cursorMinut) - Math.abs((b.x[0] + b.x[1]) / 2 - cursorMinut))[0];
+      actualitzarInfoLupa_(seleccionat);
+
+      const lupa = document.getElementById('cronologia-lupa');
+      const canvas = document.getElementById('grafic-cronologia');
+      const wrap = canvas.parentElement;
+      const trams = document.getElementById('cronologia-lupa-trams');
+      trams.innerHTML = '';
+      dadesFila.filter(d => d.x[0] < fiVista && d.x[1] > iniciVista).forEach(d => {
+        const accionable = d.estat === 'alarma' || d.estat === 'parada';
+        const barra = document.createElement(accionable ? 'button' : 'span');
+        if (accionable) barra.type = 'button';
+        barra.className = 'cronologia-lupa-tram' + (d === seleccionat ? ' actiu' : '') + (accionable ? ' accionable' : '');
+        const esquerra = Math.max(0, (d.x[0] - iniciVista) / 40 * 100);
+        const dreta = Math.min(100, (d.x[1] - iniciVista) / 40 * 100);
+        barra.style.left = esquerra + '%';
+        barra.style.width = Math.max(2, dreta - esquerra) + '%';
+        barra.style.background = COLORS_ESTAT_[d.estat];
+        barra.setAttribute('aria-label', etiquetaEstatCronologia_(d.estat) + ' ' + formatMinutsHoraPrecisa_(d.x[0], true));
+        barra.addEventListener('mouseenter', function () { cancelLarTancamentLupa_(); actualitzarInfoLupa_(d); });
+        barra.addEventListener('focus', function () { cancelLarTancamentLupa_(); actualitzarInfoLupa_(d); });
+        if (accionable) barra.addEventListener('click', function () { obrirDetallTramCronologia_(d); });
+        trams.appendChild(barra);
+      });
+
+      const cursorLupa = document.createElement('span');
+      cursorLupa.className = 'cronologia-lupa-cursor';
+      cursorLupa.style.left = Math.max(0, Math.min(100, (cursorMinut - iniciVista) / 40 * 100)) + '%';
+      trams.appendChild(cursorLupa);
+      trams.onmousemove = function (e) {
+        const rect = trams.getBoundingClientRect();
+        cursorLupa.style.left = Math.max(0, Math.min(100, (e.clientX - rect.left) / rect.width * 100)) + '%';
+      };
+
+      const x = Math.max(132, Math.min(wrap.clientWidth - 132, canvas.offsetLeft + event.x));
       const y = canvas.offsetTop + event.y;
       lupa.style.left = x + 'px';
-      lupa.style.top = (y - 18) + 'px';
+      lupa.style.top = (y - 12) + 'px';
       lupa.style.transform = 'translate(-50%, -100%)';
       lupa.hidden = false;
     }
@@ -1965,7 +2013,7 @@
           const minInici = minutsDiaMadrid_(s.inici, dia.dia);
           const minFi = minutsDiaMadrid_(s.fi, dia.dia);
           if (minFi <= minInici) return;
-          dataset.push({ x: [minInici, minFi], y: dia.etiqueta, estat: s.estat, referencies: s.referencies, alarmes: s.alarmes });
+          dataset.push({ x: [minInici, minFi], y: dia.etiqueta, estat: s.estat, referencies: s.referencies, alarmes: s.alarmes, parades: s.parades });
         });
       });
       const labels = dies.map(d => d.etiqueta);
@@ -1991,6 +2039,7 @@
           responsive: true, maintainAspectRatio: false,
           interaction: { mode: 'nearest', axis: 'xy', intersect: false },
           onHover: mostrarLupaCronologia_,
+          onClick: clicarTramCronologia_,
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -2012,6 +2061,9 @@
                   if (c.raw.estat === 'alarma' && c.raw.alarmes && c.raw.alarmes.length) {
                     extres.push.apply(extres, c.raw.alarmes.map(a => a.codi + ' — ' + a.missatge));
                   }
+                  if (c.raw.estat === 'parada' && c.raw.parades && c.raw.parades.length) {
+                    extres.push.apply(extres, c.raw.parades.map(p => p.motiu));
+                  }
                   return extres;
                 }
               }
@@ -2032,7 +2084,11 @@
       }
       if (typeof Chart === 'undefined') return;
       graficCronologia_ = new Chart(ctx, config);
-      ctx.onmouseleave = amagarLupaCronologia_;
+      ctx.onmouseenter = cancelLarTancamentLupa_;
+      ctx.onmouseleave = programarTancamentLupa_;
+      const lupa = document.getElementById('cronologia-lupa');
+      lupa.onmouseenter = cancelLarTancamentLupa_;
+      lupa.onmouseleave = programarTancamentLupa_;
     }
 
     function pintarKpiCronologia_(dies) {

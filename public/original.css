@@ -654,20 +654,22 @@
   .grafic-wrap { height: 220px; margin-bottom: 18px; }
   .cronologia-grafic-wrap { position: relative; }
   .cronologia-lupa {
-    position: absolute; z-index: 20; width: 204px; height: 204px; padding: 34px 22px 24px;
+    position: absolute; z-index: 20; width: 264px; height: 264px; padding: 46px 28px 30px;
     border: 3px solid var(--accent); border-radius: 50%; background: var(--surface);
     color: var(--text); box-shadow: var(--shadow-lg), inset 0 0 0 5px var(--surface-2);
-    pointer-events: none; text-align: center; overflow: hidden;
+    pointer-events: auto; text-align: center; overflow: hidden;
   }
   .cronologia-lupa[hidden] { display: none; }
   .cronologia-lupa-estat { font-weight: 700; font-size: 14px; }
   .cronologia-lupa-hora { margin-top: 4px; color: var(--text-muted); font-family: var(--font-mono); font-size: 11px; }
-  .cronologia-lupa-trams { position: relative; height: 30px; margin: 14px 0 10px; background: var(--surface-2); border-radius: 6px; overflow: hidden; }
-  .cronologia-lupa-trams span { position: absolute; top: 0; bottom: 0; min-width: 3px; }
-  .cronologia-lupa-trams span.actiu { top: 0; bottom: 0; z-index: 2; box-shadow: inset 0 0 0 2px var(--text); }
+  .cronologia-lupa-trams { position: relative; height: 44px; margin: 16px 0 12px; background: var(--surface-2); border-radius: 7px; overflow: hidden; }
+  .cronologia-lupa-tram { position: absolute; top: 0; bottom: 0; min-width: 5px; border: 0; border-radius: 0; padding: 0; margin: 0; appearance: none; }
+  .cronologia-lupa-tram.actiu { z-index: 2; box-shadow: inset 0 0 0 2px var(--text); }
+  button.cronologia-lupa-tram.accionable { cursor: pointer; }
+  button.cronologia-lupa-tram.accionable:focus-visible { z-index: 5; outline: 3px solid var(--text); outline-offset: -3px; }
   .cronologia-lupa-trams span.cronologia-lupa-cursor {
     z-index: 4; width: 2px; min-width: 2px; background: var(--text); transform: translateX(-50%);
-    box-shadow: 0 0 0 1px rgba(0,0,0,.45);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.45); pointer-events: none; position: absolute; top: 0; bottom: 0;
   }
   .cronologia-lupa-trams span.cronologia-lupa-cursor::before {
     content: ''; position: absolute; left: 50%; top: 50%; width: 8px; height: 8px;
