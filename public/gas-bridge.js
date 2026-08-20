@@ -92,7 +92,8 @@ const IMPL = {
     return JSON.stringify(dades);
   },
   async getDispositiusLog(token) {
-    return apiFetch_('/dispositius-log', { token });
+    const dades = await apiFetch_('/dispositius-log', { token });
+    return JSON.stringify(dades);
   },
   async getPreusConsum(token) {
     return apiFetch_('/preus-consum', { token });

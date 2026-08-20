@@ -170,6 +170,8 @@
       </div>
 
       <div id="dispositius-view" class="hidden">
+        <h2 id="titol-dispositius">Dispositius</h2>
+        <div class="kpi-row" id="kpi-row-dispositius"></div>
         <div class="cronologia-llegenda" id="dispositius-llegenda"></div>
         <div class="grafic-wrap"><canvas id="grafic-dispositius" height="110"></canvas></div>
         <div class="taula-scroll">
@@ -436,6 +438,7 @@
         preu_aire: '€/unitat aire', preu_electric: '€/unitat elèctric',
         mitjana_peca: 'per peça', unitat_aire: 'unitat', unitat_electric: 'kWh',
         cronologia_titol: 'Cronologia', cronologia_dia1: 'Dia 1', cronologia_dia2: 'Dia 2 (comparar)', cronologia_carregant: 'Carregant cronologia…', cronologia_error: 'No s’ha pogut carregar la cronologia',
+        dispositius_titol: 'Dispositius', dispositius_connectats: 'Connectats', dispositius_inactius: 'Inactius', dispositius_total: 'Total', dispositius_maquina: 'Màquina', dispositius_client: 'Client', dispositius_estat: 'Estat actual', dispositius_inactiu_5d: 'Inactiu (5 dies)', dispositius_ultima_connexio: 'Última connexió', dispositius_carregant: 'Carregant dispositius…', dispositius_error: 'No s’han pogut carregar els dispositius',
         cronologia_producint: 'Produint', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada', cronologia_incomunicada: 'Incomunicada',
         taula_codi: 'Codi', taula_missatge: 'Missatge',
         buit_dades: 'Sense dades', buit_paradas: 'Sense paradas en aquest període', buit_incidencies: "Sense incidències en aquest període",
@@ -463,6 +466,7 @@
         preu_aire: '€/unidad aire', preu_electric: '€/unidad eléctrico',
         mitjana_peca: 'por pieza', unitat_aire: 'unidad', unitat_electric: 'kWh',
         cronologia_titol: 'Cronología', cronologia_dia1: 'Día 1', cronologia_dia2: 'Día 2 (comparar)', cronologia_carregant: 'Cargando cronología…', cronologia_error: 'No se ha podido cargar la cronología',
+        dispositius_titol: 'Dispositivos', dispositius_connectats: 'Conectados', dispositius_inactius: 'Inactivos', dispositius_total: 'Total', dispositius_maquina: 'Máquina', dispositius_client: 'Cliente', dispositius_estat: 'Estado actual', dispositius_inactiu_5d: 'Inactivo (5 días)', dispositius_ultima_connexio: 'Última conexión', dispositius_carregant: 'Cargando dispositivos…', dispositius_error: 'No se han podido cargar los dispositivos',
         cronologia_producint: 'Produciendo', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada', cronologia_incomunicada: 'Incomunicada',
         taula_codi: 'Código', taula_missatge: 'Mensaje',
         buit_dades: 'Sin datos', buit_paradas: 'Sin paradas en este período', buit_incidencies: 'Sin incidencias en este período',
@@ -490,6 +494,7 @@
         preu_aire: '€/unit air', preu_electric: '€/unit electric',
         mitjana_peca: 'per piece', unitat_aire: 'unit', unitat_electric: 'kWh',
         cronologia_titol: 'Timeline', cronologia_dia1: 'Day 1', cronologia_dia2: 'Day 2 (compare)', cronologia_carregant: 'Loading timeline…', cronologia_error: 'The timeline could not be loaded',
+        dispositius_titol: 'Devices', dispositius_connectats: 'Connected', dispositius_inactius: 'Inactive', dispositius_total: 'Total', dispositius_maquina: 'Machine', dispositius_client: 'Client', dispositius_estat: 'Current status', dispositius_inactiu_5d: 'Inactive (5 days)', dispositius_ultima_connexio: 'Last connection', dispositius_carregant: 'Loading devices…', dispositius_error: 'The devices could not be loaded',
         cronologia_producint: 'Producing', cronologia_alarma: 'Alarm', cronologia_parada: 'Stopped', cronologia_incomunicada: 'Offline',
         taula_codi: 'Code', taula_missatge: 'Message',
         buit_dades: 'No data', buit_paradas: 'No stops in this period', buit_incidencies: 'No alerts in this period',
@@ -524,6 +529,14 @@
       document.getElementById('lbl-cronologia-dia1').textContent = t_('cronologia_dia1');
       document.getElementById('lbl-cronologia-dia2').textContent = t_('cronologia_dia2');
       pintarLlegendaCronologia_();
+      document.getElementById('nav-tab-dispositius').textContent = t_('dispositius_titol');
+      document.getElementById('titol-dispositius').textContent = t_('dispositius_titol');
+      document.getElementById('th-disp-nom').textContent = t_('dispositius_maquina');
+      document.getElementById('th-disp-client').textContent = t_('dispositius_client');
+      document.getElementById('th-disp-estat').textContent = t_('dispositius_estat');
+      document.getElementById('th-disp-inactiu').textContent = t_('dispositius_inactiu_5d');
+      document.getElementById('th-disp-connexio').textContent = t_('dispositius_ultima_connexio');
+      if (dadesDispositiusCache_) renderDispositiusLog_(dadesDispositiusCache_);
       document.getElementById('lbl-any').textContent = t_('f_any');
       document.getElementById('lbl-mes').textContent = t_('f_mes');
       document.getElementById('lbl-referencia').textContent = t_('f_referencia');
@@ -1790,6 +1803,14 @@
       return parts.hour * 60 + parts.minute + parts.second / 60;
     }
 
+    function formatarDataHoraMadrid_(iso) {
+      if (!iso) return '—';
+      const parts = Object.fromEntries(FORMATADOR_CRONOLOGIA_MADRID_.formatToParts(new Date(iso))
+        .filter(p => p.type !== 'literal').map(p => [p.type, Number(p.value)]));
+      return String(parts.day).padStart(2, '0') + '/' + String(parts.month).padStart(2, '0') + ' ' +
+        String(parts.hour).padStart(2, '0') + ':' + String(parts.minute).padStart(2, '0');
+    }
+
     function carregarCronologia_() {
       const peticioId = ++cronologiaPeticioId_;
       const maquinaId = maquinaActual;
@@ -1921,30 +1942,51 @@
     }
 
     let graficDispositius_ = null;
+    let dadesDispositiusCache_ = null;
 
     function carregarDispositiusLog_() {
+      document.getElementById('kpi-row-dispositius').innerHTML = `<div class="empty-state">${t_('dispositius_carregant')}</div>`;
+      document.getElementById('dispositius-llegenda').innerHTML = '';
+      document.getElementById('grafic-dispositius').style.display = 'none';
+      document.getElementById('dispositius-taula').innerHTML = `<tr><td colspan="5" class="empty-state">${t_('dispositius_carregant')}</td></tr>`;
       google.script.run
-        .withSuccessHandler(function (resposta) { renderDispositiusLog_(JSON.parse(resposta)); })
-        .withFailureHandler(errorSessio_)
+        .withSuccessHandler(function (resposta) {
+          const dades = typeof resposta === 'string' ? JSON.parse(resposta) : resposta;
+          renderDispositiusLog_(dades);
+        })
+        .withFailureHandler(function (err) {
+          errorSessio_(err);
+          document.getElementById('kpi-row-dispositius').innerHTML = `<div class="empty-state error-msg">${t_('dispositius_error')}</div>`;
+          document.getElementById('dispositius-taula').innerHTML = `<tr><td colspan="5" class="empty-state error-msg">${t_('dispositius_error')}</td></tr>`;
+        })
         .getDispositiusLog(token);
     }
 
     function renderDispositiusLog_(dades) {
+      dadesDispositiusCache_ = dades;
+      const serie = Array.isArray(dades.serie) ? dades.serie : [];
+      const dispositius = Array.isArray(dades.dispositius) ? dades.dispositius : [];
+      const actual = serie.length ? serie[serie.length - 1] : { connectats: 0, inactius: dispositius.length };
+      document.getElementById('kpi-row-dispositius').innerHTML = [
+        [t_('dispositius_total'), dispositius.length],
+        [t_('dispositius_connectats'), actual.connectats],
+        [t_('dispositius_inactius'), actual.inactius]
+      ].map(kpi => `<div class="kpi"><div class="valor">${kpi[1]}</div><div class="etiqueta">${kpi[0]}</div></div>`).join('');
       const llegenda = document.getElementById('dispositius-llegenda');
       llegenda.innerHTML = `
-        <span class="cronologia-chip"><i style="background:#34d17a"></i>Connectats</span>
-        <span class="cronologia-chip"><i style="background:#8a95a5"></i>Inactius</span>`;
+        <span class="cronologia-chip"><i style="background:#34d17a"></i>${t_('dispositius_connectats')}</span>
+        <span class="cronologia-chip"><i style="background:#8a95a5"></i>${t_('dispositius_inactius')}</span>`;
 
       const ctx = document.getElementById('grafic-dispositius');
-      const etiquetes = dades.serie.map(p => {
-        const d = new Date(p.timestamp);
-        return formatarData_(p.timestamp) + ' ' + String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0');
-      });
-      const datasetConnectats = dades.serie.map(p => p.connectats);
-      const datasetInactius = dades.serie.map(p => p.inactius);
+      ctx.style.display = serie.length ? '' : 'none';
+      const etiquetes = serie.map(p => formatarDataHoraMadrid_(p.timestamp));
+      const datasetConnectats = serie.map(p => p.connectats);
+      const datasetInactius = serie.map(p => p.inactius);
 
       if (graficDispositius_) {
         graficDispositius_.data.labels = etiquetes;
+        graficDispositius_.data.datasets[0].label = t_('dispositius_connectats');
+        graficDispositius_.data.datasets[1].label = t_('dispositius_inactius');
         graficDispositius_.data.datasets[0].data = datasetConnectats;
         graficDispositius_.data.datasets[1].data = datasetInactius;
         graficDispositius_.update();
@@ -1954,8 +1996,8 @@
           data: {
             labels: etiquetes,
             datasets: [
-              { label: 'Connectats', data: datasetConnectats, borderColor: '#34d17a', backgroundColor: 'rgba(52,209,122,.12)', tension: .2, fill: true, pointRadius: 0, stack: 'a' },
-              { label: 'Inactius', data: datasetInactius, borderColor: '#8a95a5', backgroundColor: 'rgba(138,149,165,.15)', tension: .2, fill: true, pointRadius: 0, stack: 'a' }
+              { label: t_('dispositius_connectats'), data: datasetConnectats, borderColor: '#34d17a', backgroundColor: 'rgba(52,209,122,.12)', tension: .2, fill: true, pointRadius: 0, stack: 'a' },
+              { label: t_('dispositius_inactius'), data: datasetInactius, borderColor: '#8a95a5', backgroundColor: 'rgba(138,149,165,.15)', tension: .2, fill: true, pointRadius: 0, stack: 'a' }
             ]
           },
           options: {
@@ -1971,13 +2013,13 @@
       }
 
       const taula = document.getElementById('dispositius-taula');
-      taula.innerHTML = dades.dispositius.map(function (dis) {
+      taula.innerHTML = dispositius.slice().sort((a, b) => b.horesInactiu - a.horesInactiu).map(function (dis) {
         return `<tr>
           <td>${escHtml_(dis.nom)}</td>
           <td>${escHtml_(dis.clientNom || '')}</td>
           <td>${badgeHtml_(dis.estatActual)}</td>
           <td>${dis.horesInactiu.toFixed(1)}h</td>
-          <td>${dis.ultimaConnexio ? formatarDataHora_(dis.ultimaConnexio) : '—'}</td>
+          <td>${formatarDataHoraMadrid_(dis.ultimaConnexio)}</td>
         </tr>`;
       }).join('') || `<tr><td colspan="5" class="empty-state">${t_('buit_dades')}</td></tr>`;
     }
