@@ -1391,20 +1391,25 @@
       google.script.run
         .withSuccessHandler(function (maquines) {
           if (seq !== peticioMaquinesSeq_) return;
-          if (maquinesCache_) {
-            const anteriors = new Map(maquinesCache_.map(m => [m.machineId, m.estatActual]));
-            const novesCaigudes = maquines.filter(m => m.estatActual === 'incomunicada' && anteriors.get(m.machineId) !== 'incomunicada');
-            if (novesCaigudes.length >= 2) mostrarAlertaCaigudaMultiple_(novesCaigudes);
+          try {
+            if (!Array.isArray(maquines)) throw new Error('Resposta inesperada a /maquines');
+            if (maquinesCache_) {
+              const anteriors = new Map(maquinesCache_.map(m => [m.machineId, m.estatActual]));
+              const novesCaigudes = maquines.filter(m => m.estatActual === 'incomunicada' && anteriors.get(m.machineId) !== 'incomunicada');
+              if (novesCaigudes.length >= 2) mostrarAlertaCaigudaMultiple_(novesCaigudes);
+            }
+            // Evita repintar (i re-disparar l'animació d'entrada de les
+            // targetes) quan el poll silenciós detecta un canvi a l'app
+            // però les dades d'aquesta vista concreta són exactament les
+            // mateixes que ja es veien — si no, amb heartbeats cada 5s
+            // gairebé sempre "canvia algo" i la graella parpelleja sola.
+            const igual = maquinesCache_ && JSON.stringify(maquines) === JSON.stringify(maquinesCache_);
+            maquinesCache_ = maquines;
+            if (!igual) pintarMaquines(filtrarMaquinesText_(maquines));
+            precarregarFitxesMaquines_(maquines);
+          } catch (e) {
+            errorSessio_(e);
           }
-          // Evita repintar (i re-disparar l'animació d'entrada de les
-          // targetes) quan el poll silenciós detecta un canvi a l'app
-          // però les dades d'aquesta vista concreta són exactament les
-          // mateixes que ja es veien — si no, amb heartbeats cada 5s
-          // gairebé sempre "canvia algo" i la graella parpelleja sola.
-          const igual = maquinesCache_ && JSON.stringify(maquines) === JSON.stringify(maquinesCache_);
-          maquinesCache_ = maquines;
-          if (!igual) pintarMaquines(filtrarMaquinesText_(maquines));
-          precarregarFitxesMaquines_(maquines);
         })
         .withFailureHandler(errorSessio_)
         .getMaquines(token, {});
