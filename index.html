@@ -171,6 +171,19 @@
 
       <div id="dispositius-view" class="hidden">
         <h2 id="titol-dispositius">Dispositius</h2>
+        <h3 id="titol-dispositius-usuaris">Dispositius actius per usuari</h3>
+        <div class="kpi-row" id="kpi-row-sessions"></div>
+        <div class="taula-scroll">
+          <table>
+            <thead><tr>
+              <th id="th-sessio-usuari">Usuari</th><th id="th-sessio-client">Client</th>
+              <th id="th-sessio-actius">Dispositius actius</th><th id="th-sessio-detall">Dispositius</th>
+              <th id="th-sessio-activitat">Última activitat</th>
+            </tr></thead>
+            <tbody id="sessions-usuaris-taula"></tbody>
+          </table>
+        </div>
+        <h3 id="titol-dispositius-maquines">Connectivitat de les màquines</h3>
         <div class="kpi-row" id="kpi-row-dispositius"></div>
         <div class="cronologia-llegenda" id="dispositius-llegenda"></div>
         <div class="grafic-wrap"><canvas id="grafic-dispositius" height="110"></canvas></div>
@@ -423,6 +436,8 @@
     let produccioActual_ = null;
     let versioClient_ = null;
     let pollIntervalId_ = null;
+    let presenciaIntervalId_ = null;
+    let ultimRefrescDispositius_ = 0;
     let ultimRefrescEstats_ = 0;
     const REFRESC_ESTATS_MS_ = 2000;
 
@@ -446,7 +461,7 @@
         preu_aire: '€/unitat aire', preu_electric: '€/unitat elèctric',
         mitjana_peca: 'per peça', unitat_aire: 'unitat', unitat_electric: 'kWh',
         cronologia_titol: 'Cronologia', cronologia_dia1: 'Dia 1', cronologia_dia2: 'Dia 2 (comparar)', cronologia_carregant: 'Carregant cronologia…', cronologia_error: 'No s’ha pogut carregar la cronologia', cronologia_durada: 'Durada',
-        dispositius_titol: 'Dispositius', dispositius_connectats: 'Connectats', dispositius_inactius: 'Inactius', dispositius_total: 'Total', dispositius_maquina: 'Màquina', dispositius_client: 'Client', dispositius_estat: 'Estat actual', dispositius_inactiu_5d: 'Inactiu (5 dies)', dispositius_ultima_connexio: 'Última connexió', dispositius_carregant: 'Carregant dispositius…', dispositius_error: 'No s’han pogut carregar els dispositius',
+        dispositius_titol: 'Dispositius', dispositius_connectats: 'Connectats', dispositius_inactius: 'Inactius', dispositius_total: 'Total', dispositius_maquina: 'Màquina', dispositius_client: 'Client', dispositius_estat: 'Estat actual', dispositius_inactiu_5d: 'Inactiu (5 dies)', dispositius_ultima_connexio: 'Última connexió', dispositius_carregant: 'Carregant dispositius…', dispositius_error: 'No s’han pogut carregar els dispositius', dispositius_usuaris_titol: 'Dispositius actius per usuari', dispositius_maquines_titol: 'Connectivitat de les màquines', dispositius_usuari: 'Usuari', dispositius_actius: 'Dispositius actius', dispositius_detall: 'Dispositius', dispositius_ultima_activitat: 'Última activitat', dispositius_usuaris_actius: 'Usuaris actius',
         cronologia_producint: 'Produint', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada', cronologia_incomunicada: 'Incomunicada',
         taula_codi: 'Codi', taula_missatge: 'Missatge',
         buit_dades: 'Sense dades', buit_paradas: 'Sense paradas en aquest període', buit_incidencies: "Sense incidències en aquest període",
@@ -474,7 +489,7 @@
         preu_aire: '€/unidad aire', preu_electric: '€/unidad eléctrico',
         mitjana_peca: 'por pieza', unitat_aire: 'unidad', unitat_electric: 'kWh',
         cronologia_titol: 'Cronología', cronologia_dia1: 'Día 1', cronologia_dia2: 'Día 2 (comparar)', cronologia_carregant: 'Cargando cronología…', cronologia_error: 'No se ha podido cargar la cronología', cronologia_durada: 'Duración',
-        dispositius_titol: 'Dispositivos', dispositius_connectats: 'Conectados', dispositius_inactius: 'Inactivos', dispositius_total: 'Total', dispositius_maquina: 'Máquina', dispositius_client: 'Cliente', dispositius_estat: 'Estado actual', dispositius_inactiu_5d: 'Inactivo (5 días)', dispositius_ultima_connexio: 'Última conexión', dispositius_carregant: 'Cargando dispositivos…', dispositius_error: 'No se han podido cargar los dispositivos',
+        dispositius_titol: 'Dispositivos', dispositius_connectats: 'Conectados', dispositius_inactius: 'Inactivos', dispositius_total: 'Total', dispositius_maquina: 'Máquina', dispositius_client: 'Cliente', dispositius_estat: 'Estado actual', dispositius_inactiu_5d: 'Inactivo (5 días)', dispositius_ultima_connexio: 'Última conexión', dispositius_carregant: 'Cargando dispositivos…', dispositius_error: 'No se han podido cargar los dispositivos', dispositius_usuaris_titol: 'Dispositivos activos por usuario', dispositius_maquines_titol: 'Conectividad de las máquinas', dispositius_usuari: 'Usuario', dispositius_actius: 'Dispositivos activos', dispositius_detall: 'Dispositivos', dispositius_ultima_activitat: 'Última actividad', dispositius_usuaris_actius: 'Usuarios activos',
         cronologia_producint: 'Produciendo', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada', cronologia_incomunicada: 'Incomunicada',
         taula_codi: 'Código', taula_missatge: 'Mensaje',
         buit_dades: 'Sin datos', buit_paradas: 'Sin paradas en este período', buit_incidencies: 'Sin incidencias en este período',
@@ -502,7 +517,7 @@
         preu_aire: '€/unit air', preu_electric: '€/unit electric',
         mitjana_peca: 'per piece', unitat_aire: 'unit', unitat_electric: 'kWh',
         cronologia_titol: 'Timeline', cronologia_dia1: 'Day 1', cronologia_dia2: 'Day 2 (compare)', cronologia_carregant: 'Loading timeline…', cronologia_error: 'The timeline could not be loaded', cronologia_durada: 'Duration',
-        dispositius_titol: 'Devices', dispositius_connectats: 'Connected', dispositius_inactius: 'Inactive', dispositius_total: 'Total', dispositius_maquina: 'Machine', dispositius_client: 'Client', dispositius_estat: 'Current status', dispositius_inactiu_5d: 'Inactive (5 days)', dispositius_ultima_connexio: 'Last connection', dispositius_carregant: 'Loading devices…', dispositius_error: 'The devices could not be loaded',
+        dispositius_titol: 'Devices', dispositius_connectats: 'Connected', dispositius_inactius: 'Inactive', dispositius_total: 'Total', dispositius_maquina: 'Machine', dispositius_client: 'Client', dispositius_estat: 'Current status', dispositius_inactiu_5d: 'Inactive (5 days)', dispositius_ultima_connexio: 'Last connection', dispositius_carregant: 'Loading devices…', dispositius_error: 'The devices could not be loaded', dispositius_usuaris_titol: 'Active devices per user', dispositius_maquines_titol: 'Machine connectivity', dispositius_usuari: 'User', dispositius_actius: 'Active devices', dispositius_detall: 'Devices', dispositius_ultima_activitat: 'Last activity', dispositius_usuaris_actius: 'Active users',
         cronologia_producint: 'Producing', cronologia_alarma: 'Alarm', cronologia_parada: 'Stopped', cronologia_incomunicada: 'Offline',
         taula_codi: 'Code', taula_missatge: 'Message',
         buit_dades: 'No data', buit_paradas: 'No stops in this period', buit_incidencies: 'No alerts in this period',
@@ -539,6 +554,18 @@
       pintarLlegendaCronologia_();
       document.getElementById('nav-tab-dispositius').textContent = t_('dispositius_titol');
       document.getElementById('titol-dispositius').textContent = t_('dispositius_titol');
+      document.getElementById('titol-dispositius-usuaris').textContent = t_('dispositius_usuaris_titol');
+      document.getElementById('titol-dispositius-maquines').textContent = t_('dispositius_maquines_titol');
+      document.getElementById('th-sessio-usuari').textContent = t_('dispositius_usuari');
+      document.getElementById('th-sessio-client').textContent = t_('dispositius_client');
+      document.getElementById('th-sessio-actius').textContent = t_('dispositius_actius');
+      document.getElementById('th-sessio-detall').textContent = t_('dispositius_detall');
+      document.getElementById('th-sessio-activitat').textContent = t_('dispositius_ultima_activitat');
+      document.getElementById('th-disp-nom').textContent = t_('dispositius_maquina');
+      document.getElementById('th-disp-client').textContent = t_('dispositius_client');
+      document.getElementById('th-disp-estat').textContent = t_('dispositius_estat');
+      document.getElementById('th-disp-inactiu').textContent = t_('dispositius_inactiu_5d');
+      document.getElementById('th-disp-connexio').textContent = t_('dispositius_ultima_connexio');
       document.getElementById('th-disp-nom').textContent = t_('dispositius_maquina');
       document.getElementById('th-disp-client').textContent = t_('dispositius_client');
       document.getElementById('th-disp-estat').textContent = t_('dispositius_estat');
@@ -643,7 +670,28 @@
           void caixa.offsetWidth; // força reflow perquè es pugui repetir l'animació en errors consecutius
           caixa.classList.add('shake');
         })
-        .login(email, password);
+        .login(email, password, obtenirInfoDispositiu_());
+    }
+
+    function obtenirInfoDispositiu_() {
+      let deviceId = '';
+      try {
+        deviceId = localStorage.getItem('monitor_device_id') || '';
+        if (!deviceId) {
+          deviceId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() :
+            'dev-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+          localStorage.setItem('monitor_device_id', deviceId);
+        }
+      } catch (e) {
+        deviceId = 'temporal-' + Math.random().toString(36).slice(2);
+      }
+      const ua = navigator.userAgent || '';
+      const esAndroid = /Android/i.test(ua);
+      const esIOS = /iPhone|iPad|iPod/i.test(ua);
+      const esWindows = /Windows/i.test(ua);
+      const plataforma = esAndroid ? 'android' : esIOS ? 'ios' : esWindows ? 'windows' : 'web';
+      const dispositiuNom = esAndroid ? 'Android' : esIOS ? 'iPhone / iPad' : esWindows ? 'Web · Windows' : 'Navegador web';
+      return { deviceId, plataforma, dispositiuNom };
     }
 
     function entrarApp_(resp, esNovaSessio) {
@@ -673,6 +721,7 @@
       if (esAdmin_) carregarFiltresAdmin_();
       carregarMaquines();
       iniciarPollVersio_();
+      iniciarPresencia_();
       if (esAdmin_) precarregarPestanyesAdmin_();
       if (esNovaSessio) { try { localStorage.removeItem('monitor_vista'); } catch (e) {} }
       else restaurarVistaActual_();
@@ -727,8 +776,11 @@
             // heartbeats perquè una màquina passi a "incomunicada" per temps.
             const tocaRecalcularEstats = vistaActual_ === 'maquines' &&
               ara - ultimRefrescEstats_ >= REFRESC_ESTATS_MS_;
-            if (versioCanviada || tocaRecalcularEstats) {
+            const tocaRefrescarDispositius = vistaActual_ === 'dispositius' &&
+              ara - ultimRefrescDispositius_ >= 30000;
+            if (versioCanviada || tocaRecalcularEstats || tocaRefrescarDispositius) {
               ultimRefrescEstats_ = ara;
+              if (tocaRefrescarDispositius) ultimRefrescDispositius_ = ara;
               refrescarVistaActual_();
             }
             versioClient_ = v;
@@ -743,12 +795,24 @@
       if (vistaActual_ === 'maquines') carregarMaquines(true);
       if (vistaActual_ === 'projectes') carregarProjectesErp(true);
       if (vistaActual_ === 'clients') carregarClientsFacturacio_(true);
+      if (vistaActual_ === 'dispositius') carregarDispositiusLog_(true);
+    }
+
+    function iniciarPresencia_() {
+      if (presenciaIntervalId_) clearInterval(presenciaIntervalId_);
+      const enviar = function () {
+        if (!token) return;
+        google.script.run.withFailureHandler(function () {}).actualitzarPresencia(token);
+      };
+      enviar();
+      presenciaIntervalId_ = setInterval(enviar, 30000);
     }
 
     function ferLogout() {
       google.script.run.logout(token);
       token = null;
       if (pollIntervalId_) { clearInterval(pollIntervalId_); pollIntervalId_ = null; }
+      if (presenciaIntervalId_) { clearInterval(presenciaIntervalId_); presenciaIntervalId_ = null; }
       versioClient_ = null;
       try { localStorage.removeItem('monitor_token'); } catch (e) {}
       document.getElementById('app-view').classList.add('hidden');
@@ -2130,11 +2194,15 @@
     let graficDispositius_ = null;
     let dadesDispositiusCache_ = null;
 
-    function carregarDispositiusLog_() {
-      document.getElementById('kpi-row-dispositius').innerHTML = `<div class="empty-state">${t_('dispositius_carregant')}</div>`;
-      document.getElementById('dispositius-llegenda').innerHTML = '';
-      document.getElementById('grafic-dispositius').style.display = 'none';
-      document.getElementById('dispositius-taula').innerHTML = `<tr><td colspan="5" class="empty-state">${t_('dispositius_carregant')}</td></tr>`;
+    function carregarDispositiusLog_(silencios) {
+      if (!silencios || !dadesDispositiusCache_) {
+        document.getElementById('kpi-row-sessions').innerHTML = `<div class="empty-state">${t_('dispositius_carregant')}</div>`;
+        document.getElementById('sessions-usuaris-taula').innerHTML = `<tr><td colspan="5" class="empty-state">${t_('dispositius_carregant')}</td></tr>`;
+        document.getElementById('kpi-row-dispositius').innerHTML = `<div class="empty-state">${t_('dispositius_carregant')}</div>`;
+        document.getElementById('dispositius-llegenda').innerHTML = '';
+        document.getElementById('grafic-dispositius').style.display = 'none';
+        document.getElementById('dispositius-taula').innerHTML = `<tr><td colspan="5" class="empty-state">${t_('dispositius_carregant')}</td></tr>`;
+      }
       google.script.run
         .withSuccessHandler(function (resposta) {
           const dades = typeof resposta === 'string' ? JSON.parse(resposta) : resposta;
@@ -2142,6 +2210,8 @@
         })
         .withFailureHandler(function (err) {
           errorSessio_(err);
+          document.getElementById('kpi-row-sessions').innerHTML = `<div class="empty-state error-msg">${t_('dispositius_error')}</div>`;
+          document.getElementById('sessions-usuaris-taula').innerHTML = `<tr><td colspan="5" class="empty-state error-msg">${t_('dispositius_error')}</td></tr>`;
           document.getElementById('kpi-row-dispositius').innerHTML = `<div class="empty-state error-msg">${t_('dispositius_error')}</div>`;
           document.getElementById('dispositius-taula').innerHTML = `<tr><td colspan="5" class="empty-state error-msg">${t_('dispositius_error')}</td></tr>`;
         })
@@ -2152,6 +2222,24 @@
       dadesDispositiusCache_ = dades;
       const serie = Array.isArray(dades.serie) ? dades.serie : [];
       const dispositius = Array.isArray(dades.dispositius) ? dades.dispositius : [];
+      const sessionsUsuaris = Array.isArray(dades.sessionsUsuaris) ? dades.sessionsUsuaris : [];
+      const totalSessions = sessionsUsuaris.reduce((total, u) => total + Number(u.dispositiusActius || 0), 0);
+      document.getElementById('kpi-row-sessions').innerHTML = [
+        [t_('dispositius_usuaris_actius'), sessionsUsuaris.length],
+        [t_('dispositius_actius'), totalSessions]
+      ].map(kpi => `<div class="kpi"><div class="valor">${kpi[1]}</div><div class="etiqueta">${kpi[0]}</div></div>`).join('');
+      document.getElementById('sessions-usuaris-taula').innerHTML = sessionsUsuaris.map(function (u) {
+        const detall = (u.dispositius || []).map(function (d) {
+          return `<span class="cronologia-chip"><i style="background:#34d17a"></i>${escHtml_(d.nom || d.plataforma || '')}</span>`;
+        }).join(' ');
+        return `<tr>
+          <td>${escHtml_(u.email)}</td>
+          <td>${escHtml_(u.clientNom || '')}</td>
+          <td><strong>${Number(u.dispositiusActius || 0)}</strong></td>
+          <td>${detall}</td>
+          <td>${formatarDataHoraMadrid_(u.ultimaActivitat)}</td>
+        </tr>`;
+      }).join('') || `<tr><td colspan="5" class="empty-state">${t_('buit_dades')}</td></tr>`;
       const actual = serie.length ? serie[serie.length - 1] : { connectats: 0, inactius: dispositius.length };
       document.getElementById('kpi-row-dispositius').innerHTML = [
         [t_('dispositius_total'), dispositius.length],

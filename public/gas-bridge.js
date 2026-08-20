@@ -42,17 +42,20 @@ function qs_(params) {
 
 // ── Implementació de cada funció que abans era una funció de servidor GAS ──
 const IMPL = {
-  async login(email, password) {
-    return apiFetch_('/login', { method: 'POST', body: { email, password } });
+  async login(email, password, dispositiu) {
+    return apiFetch_('/login', { method: 'POST', body: { email, password, ...(dispositiu || {}) } });
   },
 
-  async logout(_token) {
-    // Sessió stateless (JWT): no cal avisar el servidor, només netejar local.
-    return { ok: true };
+  async logout(token) {
+    return apiFetch_('/logout', { method: 'POST', token });
   },
 
   async getSessioActual(token) {
     return apiFetch_('/sessio', { token });
+  },
+
+  async actualitzarPresencia(token) {
+    return apiFetch_('/sessio/presencia', { method: 'POST', token });
   },
 
   async getMaquines(token, filtres) {
