@@ -435,7 +435,7 @@
         consums_titol: 'Consums', consum_aire: 'Consum aire', consum_electric: 'Consum elèctric',
         preu_aire: '€/unitat aire', preu_electric: '€/unitat elèctric',
         mitjana_peca: 'per peça', unitat_aire: 'unitat', unitat_electric: 'kWh',
-        cronologia_titol: 'Cronologia', cronologia_dia1: 'Dia 1', cronologia_dia2: 'Dia 2 (comparar)',
+        cronologia_titol: 'Cronologia', cronologia_dia1: 'Dia 1', cronologia_dia2: 'Dia 2 (comparar)', cronologia_carregant: 'Carregant cronologia…', cronologia_error: 'No s’ha pogut carregar la cronologia',
         cronologia_producint: 'Produint', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada', cronologia_incomunicada: 'Incomunicada',
         taula_codi: 'Codi', taula_missatge: 'Missatge',
         buit_dades: 'Sense dades', buit_paradas: 'Sense paradas en aquest període', buit_incidencies: "Sense incidències en aquest període",
@@ -462,7 +462,7 @@
         consums_titol: 'Consumos', consum_aire: 'Consumo aire', consum_electric: 'Consumo eléctrico',
         preu_aire: '€/unidad aire', preu_electric: '€/unidad eléctrico',
         mitjana_peca: 'por pieza', unitat_aire: 'unidad', unitat_electric: 'kWh',
-        cronologia_titol: 'Cronología', cronologia_dia1: 'Día 1', cronologia_dia2: 'Día 2 (comparar)',
+        cronologia_titol: 'Cronología', cronologia_dia1: 'Día 1', cronologia_dia2: 'Día 2 (comparar)', cronologia_carregant: 'Cargando cronología…', cronologia_error: 'No se ha podido cargar la cronología',
         cronologia_producint: 'Produciendo', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada', cronologia_incomunicada: 'Incomunicada',
         taula_codi: 'Código', taula_missatge: 'Mensaje',
         buit_dades: 'Sin datos', buit_paradas: 'Sin paradas en este período', buit_incidencies: 'Sin incidencias en este período',
@@ -489,7 +489,7 @@
         consums_titol: 'Consumption', consum_aire: 'Air consumption', consum_electric: 'Electric consumption',
         preu_aire: '€/unit air', preu_electric: '€/unit electric',
         mitjana_peca: 'per piece', unitat_aire: 'unit', unitat_electric: 'kWh',
-        cronologia_titol: 'Timeline', cronologia_dia1: 'Day 1', cronologia_dia2: 'Day 2 (compare)',
+        cronologia_titol: 'Timeline', cronologia_dia1: 'Day 1', cronologia_dia2: 'Day 2 (compare)', cronologia_carregant: 'Loading timeline…', cronologia_error: 'The timeline could not be loaded',
         cronologia_producint: 'Producing', cronologia_alarma: 'Alarm', cronologia_parada: 'Stopped', cronologia_incomunicada: 'Offline',
         taula_codi: 'Code', taula_missatge: 'Message',
         buit_dades: 'No data', buit_paradas: 'No stops in this period', buit_incidencies: 'No alerts in this period',
@@ -1749,6 +1749,7 @@
 
     const COLORS_ESTAT_ = { marxa: '#34d17a', alarma: '#ef4444', parada: '#f5a623', incomunicada: '#8a95a5' };
     let graficCronologia_ = null;
+    let cronologiaPeticioId_ = 0;
 
     function pintarLlegendaCronologia_() {
       const cont = document.getElementById('cronologia-llegenda');
@@ -1773,7 +1774,25 @@
       return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
     }
 
+    const FORMATADOR_CRONOLOGIA_MADRID_ = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+    });
+
+    // Converteix un instant UTC a minuts del dia civil seleccionat a Madrid.
+    // Comparar-lo amb una mitjanit UTC desplaçava tota la gràfica 1-2 hores.
+    function minutsDiaMadrid_(iso, diaSeleccionat) {
+      const parts = Object.fromEntries(FORMATADOR_CRONOLOGIA_MADRID_.formatToParts(new Date(iso))
+        .filter(p => p.type !== 'literal').map(p => [p.type, Number(p.value)]));
+      const diaLocal = String(parts.year).padStart(4, '0') + '-' + String(parts.month).padStart(2, '0') + '-' + String(parts.day).padStart(2, '0');
+      if (diaLocal < diaSeleccionat) return 0;
+      if (diaLocal > diaSeleccionat) return 1440;
+      return parts.hour * 60 + parts.minute + parts.second / 60;
+    }
+
     function carregarCronologia_() {
+      const peticioId = ++cronologiaPeticioId_;
+      const maquinaId = maquinaActual;
       const dia1 = document.getElementById('filtre-cronologia-dia1').value || formatIso_(new Date());
       if (!document.getElementById('filtre-cronologia-dia1').value) document.getElementById('filtre-cronologia-dia1').value = dia1;
       let dia2 = document.getElementById('filtre-cronologia-dia2').value || null;
@@ -1786,12 +1805,31 @@
       ];
       if (dia2) peticions.push({ dia: dia2, etiqueta: t_('cronologia_dia2').replace(/ \(.*\)/, '') + ' — ' + formatarData_(dia2) });
 
-      Promise.all(peticions.map(p => new Promise((resolve) => {
+      pintarEstatCronologia_(t_('cronologia_carregant'));
+      Promise.all(peticions.map(p => new Promise((resolve, reject) => {
         google.script.run
           .withSuccessHandler(function (resposta) { resolve(Object.assign({}, p, JSON.parse(resposta))); })
-          .withFailureHandler(function (err) { errorSessio_(err); resolve(Object.assign({}, p, { segments: [] })); })
-          .getCronologia(token, maquinaActual, p.dia);
-      }))).then(renderCronologia_);
+          .withFailureHandler(reject)
+          .getCronologia(token, maquinaId, p.dia);
+      }))).then(function (dies) {
+        if (peticioId !== cronologiaPeticioId_ || maquinaId !== maquinaActual) return;
+        renderCronologia_(dies);
+      }).catch(function (err) {
+        if (peticioId !== cronologiaPeticioId_ || maquinaId !== maquinaActual) return;
+        errorSessio_(err);
+        pintarEstatCronologia_(t_('cronologia_error'), true);
+      });
+    }
+
+    function pintarEstatCronologia_(missatge, esError) {
+      const ctx = document.getElementById('grafic-cronologia');
+      ctx.style.display = 'none';
+      const cont = document.getElementById('kpi-row-cronologia');
+      cont.innerHTML = '';
+      const estat = document.createElement('div');
+      estat.className = 'empty-state' + (esError ? ' error-msg' : '');
+      estat.textContent = missatge;
+      cont.appendChild(estat);
     }
 
     function renderCronologia_(dies) {
@@ -1799,14 +1837,15 @@
       const ctx = document.getElementById('grafic-cronologia');
       const dataset = [];
       dies.forEach(function (dia) {
-        const midnight = new Date(dia.dia + 'T00:00:00.000Z').getTime();
         (dia.segments || []).forEach(function (s) {
-          const minInici = (new Date(s.inici).getTime() - midnight) / 60000;
-          const minFi = (new Date(s.fi).getTime() - midnight) / 60000;
+          const minInici = minutsDiaMadrid_(s.inici, dia.dia);
+          const minFi = minutsDiaMadrid_(s.fi, dia.dia);
+          if (minFi <= minInici) return;
           dataset.push({ x: [minInici, minFi], y: dia.etiqueta, estat: s.estat, referencies: s.referencies, alarmes: s.alarmes });
         });
       });
       const labels = dies.map(d => d.etiqueta);
+      ctx.style.display = dataset.length ? '' : 'none';
 
       const config = {
         type: 'bar',
@@ -1860,6 +1899,11 @@
 
     function pintarKpiCronologia_(dies) {
       const cont = document.getElementById('kpi-row-cronologia');
+      const teDades = dies.some(dia => (dia.segments || []).length > 0);
+      if (!teDades) {
+        cont.innerHTML = `<div class="empty-state">${t_('buit_dades')}</div>`;
+        return;
+      }
       cont.innerHTML = dies.map(function (dia) {
         const totals = { marxa: 0, alarma: 0, parada: 0, incomunicada: 0 };
         (dia.segments || []).forEach(function (s) {
