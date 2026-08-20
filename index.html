@@ -1855,6 +1855,15 @@
       const raw = chart.data.datasets[actiu.datasetIndex].data[actiu.index];
       const duradaMin = raw.x[1] - raw.x[0];
       if (duradaMin >= 4) { amagarLupaCronologia_(); return; }
+      const element = chart.getDatasetMeta(actiu.datasetIndex).data[actiu.index];
+      const esquerraPx = Math.min(element.base, element.x);
+      const dretaPx = Math.max(element.base, element.x);
+      const margeX = 12;
+      const margeY = Math.max(10, (Number(element.height) || 28) / 2 + 8);
+      if (event.x < esquerraPx - margeX || event.x > dretaPx + margeX || Math.abs(event.y - element.y) > margeY) {
+        amagarLupaCronologia_();
+        return;
+      }
 
       const lupa = document.getElementById('cronologia-lupa');
       const canvas = document.getElementById('grafic-cronologia');
@@ -1974,11 +1983,12 @@
         options: {
           indexAxis: 'y',
           responsive: true, maintainAspectRatio: false,
-          interaction: { mode: 'nearest', axis: 'xy', intersect: true },
+          interaction: { mode: 'nearest', axis: 'xy', intersect: false },
           onHover: mostrarLupaCronologia_,
           plugins: {
             legend: { display: false },
             tooltip: {
+              mode: 'nearest', intersect: true,
               filter: function (c) { return (c.raw.x[1] - c.raw.x[0]) >= 4; },
               callbacks: {
                 label: function (c) {
