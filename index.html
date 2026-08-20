@@ -1875,6 +1875,8 @@
     let cronologiaPeticioId_ = 0;
     let cronologiaAnyPeticioId_ = 0;
     let cronologiaAnyVisible_ = false;
+    let cronologiaAnyRangsPendents_ = [];
+    let cronologiaAnyBlocsCarregats_ = [];
 
     function pintarLlegendaCronologia_() {
       const cont = document.getElementById('cronologia-llegenda');
@@ -2269,10 +2271,29 @@
       return rangs.reverse();
     }
 
+    function carregarBlocCronologiaAnySeguente_() {
+      if (!cronologiaAnyRangsPendents_.length) return Promise.resolve();
+      const rang = cronologiaAnyRangsPendents_.shift();
+      return new Promise(function (resolve) {
+        google.script.run
+          .withSuccessHandler(function (resposta) {
+            const dades = typeof resposta === 'string' ? JSON.parse(resposta) : resposta;
+            cronologiaAnyBlocsCarregats_.push({ mes: rang.clau, dies: Array.isArray(dades.dies) ? dades.dies : [] });
+            resolve();
+          })
+          .withFailureHandler(function () {
+            cronologiaAnyBlocsCarregats_.push({ mes: rang.clau, dies: [] });
+            resolve();
+          })
+          .getCronologiaRang(token, maquinaActual, rang.dataInici, rang.dataFi);
+      });
+    }
+
     async function carregarCronologiaAny_() {
       const peticioId = ++cronologiaAnyPeticioId_;
       const maquinaId = maquinaActual;
       cronologiaAnyVisible_ = true;
+      cronologiaAnyBlocsCarregats_ = [];
       document.getElementById('cronologia-any-view').classList.remove('hidden');
       const fi = formatIso_(new Date());
       const iniciDate = new Date();
@@ -2280,28 +2301,10 @@
       const inici = formatIso_(iniciDate);
       document.getElementById('cronologia-any-rang').textContent = t_('cronologia_any_rang').replace('{inici}', formatarData_(inici)).replace('{fi}', formatarData_(fi));
       pintarSkeletonCronologiaAny_();
-      const rangs = obtenirRangsMensuals_(inici, fi);
-      const cont = document.getElementById('cronologia-any-content');
-      const resultats = [];
-      for (const rang of rangs) {
-        if (peticioId !== cronologiaAnyPeticioId_ || maquinaId !== maquinaActual) return;
-        try {
-          const bloc = await new Promise(function (resolve, reject) {
-            google.script.run
-              .withSuccessHandler(function (resposta) {
-                const dades = typeof resposta === 'string' ? JSON.parse(resposta) : resposta;
-                resolve({ mes: rang.clau, dies: Array.isArray(dades.dies) ? dades.dies : [] });
-              })
-              .withFailureHandler(reject)
-              .getCronologiaRang(token, maquinaId, rang.dataInici, rang.dataFi);
-          });
-          resultats.push(bloc);
-        } catch (e) {
-          resultats.push({ mes: rang.clau, dies: [] });
-        }
-        if (peticioId !== cronologiaAnyPeticioId_ || maquinaId !== maquinaActual) return;
-        renderCronologiaAnyBlocs_(resultats);
-      }
+      cronologiaAnyRangsPendents_ = obtenirRangsMensuals_(inici, fi);
+      await carregarBlocCronologiaAnySeguente_();
+      if (peticioId !== cronologiaAnyPeticioId_ || maquinaId !== maquinaActual) return;
+      renderCronologiaAnyBlocs_(cronologiaAnyBlocsCarregats_);
     }
 
     function renderCronologiaAnyBlocs_(blocs) {
@@ -2322,6 +2325,9 @@
         const blocId = 'cronologia-any-' + mes.replace('-', '');
         return `<section class="cronologia-any-bloc"><h5>${escHtml_(formatMesAnyCronologia_(mes + '-01'))}</h5><div class="cronologia-llegenda">${document.getElementById('cronologia-llegenda').innerHTML}</div><div class="grafic-wrap cronologia-grafic-wrap cronologia-any-chart"><canvas id="${blocId}-canvas" height="${Math.max(120, perMes[mes].length * 34)}"></canvas><div class="cronologia-lupa" id="${blocId}-lupa" hidden aria-live="polite"><div class="cronologia-lupa-estat" id="${blocId}-estat"></div><div class="cronologia-lupa-hora" id="${blocId}-hora"></div><div class="cronologia-lupa-trams" id="${blocId}-trams"></div><div class="cronologia-lupa-extra" id="${blocId}-extra"></div></div></div><div class="kpi-row hidden" id="${blocId}-kpi"></div></section>`;
       }).join('') || `<div class="empty-state">${t_('buit_dades')}</div>`;
+      if (cronologiaAnyRangsPendents_.length) {
+        cont.innerHTML += `<div class="cronologia-any-loadmore"><button type="button" class="secondary-btn" id="btn-cronologia-any-more">Cargar mes anterior</button></div>`;
+      }
       mesosRender.forEach(function (mes) {
         const blocId = 'cronologia-any-' + mes.replace('-', '');
         const state = { chart: null, lupaTancamentTimeout: null };
@@ -2336,6 +2342,15 @@
           kpi: document.getElementById(blocId + '-kpi')
         });
       });
+      const botoMesAnterior = document.getElementById('btn-cronologia-any-more');
+      if (botoMesAnterior) {
+        botoMesAnterior.addEventListener('click', async function () {
+          botoMesAnterior.disabled = true;
+          botoMesAnterior.textContent = t_('cronologia_carregant');
+          await carregarBlocCronologiaAnySeguente_();
+          renderCronologiaAnyBlocs_(cronologiaAnyBlocsCarregats_);
+        });
+      }
     }
 
     let graficDispositius_ = null;
