@@ -2144,7 +2144,9 @@
         <tr data-dia="${i.timestampInici.slice(0, 10)}" class="fila-clicable">
           <td>${i.codi}</td>
           <td>${i.missatge}</td>
-          <td><span class="torn-dot" style="background:${COLORS_TORN_[i.torn] || '#8a95a5'}"></span>${DICC[idioma_].torns[i.torn] || i.torn}</td>
+          <td>${(i.torns && i.torns.length ? i.torns : [i.torn]).map(t =>
+            `<span class="torn-dot" style="background:${COLORS_TORN_[t] || '#8a95a5'}"></span>${DICC[idioma_].torns[t] || t}`
+          ).join(', ')}</td>
           <td>${formatarDataHora_(i.timestampInici)}</td>
           <td>${formatarDataHora_(i.timestampFi)}</td>
         </tr>`).join('') || `<tr><td colspan="5" class="empty-state">${t_('buit_incidencies')}</td></tr>`;
@@ -2175,7 +2177,9 @@
       historic.forEach(i => {
         const key = i.timestampInici.slice(0, 10);
         if (!perDiaMap[key]) perDiaMap[key] = { data: i.timestampInici };
-        perDiaMap[key][i.torn] = (perDiaMap[key][i.torn] || 0) + 1;
+        (i.torns && i.torns.length ? i.torns : [i.torn]).forEach(t => {
+          perDiaMap[key][t] = (perDiaMap[key][t] || 0) + 1;
+        });
       });
       historicDiesActuals_ = Object.values(perDiaMap).sort((a, b) => new Date(a.data) - new Date(b.data));
       const etiquetes = historicDiesActuals_.map(d => formatarData_(d.data));
