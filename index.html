@@ -752,6 +752,7 @@
       ultimRefrescMaquinesProduccio_ = Date.now();
       iniciarPollVersio_();
       iniciarPresencia_();
+      if (esAdmin_) precarregarPestanyesAdmin_();
       if (esNovaSessio) { try { localStorage.removeItem('monitor_vista'); } catch (e) {} }
       else restaurarVistaActual_();
     }
@@ -1449,6 +1450,7 @@
             const igual = maquinesCache_ && JSON.stringify(maquines) === JSON.stringify(maquinesCache_);
             maquinesCache_ = maquines;
             if (!igual) pintarMaquines(filtrarMaquinesText_(maquines));
+            precarregarFitxesMaquines_(maquines);
           } catch (e) {
             errorSessio_(e);
           }
@@ -1505,6 +1507,18 @@
       zona.textContent = '⚠ ' + t_('alerta_caiguda_multiple').replace('{n}', maquines.length) +
         ' ' + maquines.map(m => m.nom).join(', ');
       zona.style.display = 'block';
+    }
+
+    // Carrega en silenci la fitxa de cada màquina (any actual, sense filtres)
+    // just quan es pinten les targetes, perquè obrir-la desprès sigui instantani.
+    function precarregarFitxesMaquines_(maquines) {
+      maquines.forEach(function (m) {
+        if (m.estatActual === 'incomunicada' || m.estatActual === 'desactivada') return;
+        google.script.run
+          .withSuccessHandler(function (resposta) { fitxaCache_[m.machineId] = JSON.parse(resposta); })
+          .withFailureHandler(function () {})
+          .getDetallMaquina(token, m.machineId, null, null, { any: new Date().getFullYear(), mes: null, torn: null });
+      });
     }
 
     let filtreEstatMaquines_ = null;
