@@ -228,6 +228,16 @@
             <button type="button" class="nav-tab actiu" data-mode="avui" id="btn-mode-avui">Avui</button>
             <button type="button" class="nav-tab" data-mode="periode" id="btn-mode-periode">Període</button>
           </div>
+          <div class="filtres-historic filtres-produccio-compactes">
+            <div>
+              <label id="lbl-torn">Torn</label>
+              <div id="filtre-torn" class="filtres-torn" role="group"></div>
+            </div>
+            <div id="filtre-referencia-wrap" class="hidden">
+              <label id="lbl-referencia">Referència</label>
+              <select id="filtre-referencia"></select>
+            </div>
+          </div>
           <div id="bloc-periode-avui">
             <div class="kpi-row">
               <div class="kpi kpi-produccio"><div class="valor" id="kpi-avui-peces">-</div><div class="etiqueta" id="lbl-kpi-avui-peces">Peces bones</div></div>
@@ -246,14 +256,6 @@
             <div>
               <label id="lbl-mes">Mes</label>
               <select id="filtre-mes"></select>
-            </div>
-            <div>
-              <label id="lbl-torn">Torn</label>
-              <div id="filtre-torn" class="filtres-torn" role="group"></div>
-            </div>
-            <div id="filtre-referencia-wrap" class="hidden">
-              <label id="lbl-referencia">Referència</label>
-              <select id="filtre-referencia"></select>
             </div>
             <div>
               <label id="lbl-desde-p">Des de</label>
@@ -304,15 +306,8 @@
           <h3 id="titol-cronologia">Cronologia</h3>
           <div class="filtres-historic">
             <div>
-              <label id="lbl-cronologia-dia1">Dia 1</label>
-              <input type="text" class="date-input" id="filtre-cronologia-dia1" readonly placeholder="dd/mm/aaaa">
-            </div>
-            <div>
-              <label id="lbl-cronologia-dia2">Dia 2 (comparar)</label>
-              <input type="text" class="date-input" id="filtre-cronologia-dia2" readonly placeholder="dd/mm/aaaa">
-            </div>
-            <div class="cronologia-actions">
-              <button type="button" class="secondary-btn" id="btn-cronologia-any">Últim any</button>
+              <label id="lbl-cronologia-rang">Interval</label>
+              <input type="text" class="date-input" id="filtre-cronologia-rang" readonly>
             </div>
           </div>
           <div class="cronologia-llegenda" id="cronologia-llegenda"></div>
@@ -326,13 +321,6 @@
             </div>
           </div>
           <div class="kpi-row" id="kpi-row-cronologia"></div>
-          <div id="cronologia-any-view" class="hidden">
-            <div class="cronologia-any-head">
-              <h4 id="titol-cronologia-any">Cronologia últim any</h4>
-              <span id="cronologia-any-rang"></span>
-            </div>
-            <div id="cronologia-any-content"></div>
-          </div>
         </div>
 
         <div class="panell" id="panell-parades">
@@ -472,7 +460,7 @@
         consums_titol: 'Consums', consum_aire: 'Consum aire', consum_electric: 'Consum elèctric',
         preu_aire: '€/unitat aire', preu_electric: '€/unitat elèctric',
         mitjana_peca: 'per peça', unitat_aire: 'unitat', unitat_electric: 'kWh',
-        cronologia_titol: 'Cronologia', cronologia_dia1: 'Dia 1', cronologia_dia2: 'Dia 2 (comparar)', cronologia_carregant: 'Carregant cronologia…', cronologia_error: 'No s’ha pogut carregar la cronologia', cronologia_durada: 'Durada', cronologia_ultim_any: 'Últim any', cronologia_any_titol: 'Cronologia últim any', cronologia_any_rang: 'De {inici} a {fi}', cronologia_any_carregant: 'Carregant cronologia anual…',
+        cronologia_titol: 'Cronologia', cronologia_interval: 'Interval', cronologia_carregant: 'Carregant cronologia…', cronologia_error: 'No s’ha pogut carregar la cronologia', cronologia_durada: 'Durada',
         dispositius_titol: 'Dispositius', dispositius_connectats: 'Connectats', dispositius_inactius: 'Inactius', dispositius_total: 'Total', dispositius_maquina: 'Màquina', dispositius_client: 'Client', dispositius_estat: 'Estat actual', dispositius_inactiu_5d: 'Última inactivitat', dispositius_ultima_connexio: 'Última connexió', dispositius_carregant: 'Carregant dispositius…', dispositius_error: 'No s’han pogut carregar els dispositius', dispositius_usuaris_titol: 'Dispositius actius per usuari', dispositius_maquines_titol: 'Connectivitat de les màquines', dispositius_usuari: 'Usuari', dispositius_actius: 'Dispositius actius', dispositius_detall: 'Dispositius', dispositius_ultima_activitat: 'Última activitat', dispositius_usuaris_actius: 'Usuaris actius', alerta_caiguda_multiple: 'Alerta: {n} màquines han quedat incomunicades simultàniament.', dispositius_auditoria_titol: 'Auditoria de caigudes', dispositius_auditoria_buida: 'Encara no hi ha caigudes verificades en aquesta finestra.', dispositius_auditoria_ultima: 'Última caiguda verificada', dispositius_auditoria_simultania: 'Última caiguda simultània', dispositius_auditoria_global: 'Possible caiguda global', dispositius_auditoria_individual: 'Caiguda individual', dispositius_auditoria_plural: '{n} màquines', dispositius_auditoria_origen: 'Origen', dispositius_auditoria_tipus: 'Tipus', dispositius_auditoria_finestra: 'Finestra', dispositius_origen_heartbeat_gap: 'Tall de heartbeat', dispositius_origen_deploy_restart: 'Reinici o desplegament del backend',
         cronologia_producint: 'Produint', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada', cronologia_incomunicada: 'Incomunicada',
         taula_codi: 'Codi', taula_missatge: 'Missatge',
@@ -500,7 +488,7 @@
         consums_titol: 'Consumos', consum_aire: 'Consumo aire', consum_electric: 'Consumo eléctrico',
         preu_aire: '€/unidad aire', preu_electric: '€/unidad eléctrico',
         mitjana_peca: 'por pieza', unitat_aire: 'unidad', unitat_electric: 'kWh',
-        cronologia_titol: 'Cronología', cronologia_dia1: 'Día 1', cronologia_dia2: 'Día 2 (comparar)', cronologia_carregant: 'Cargando cronología…', cronologia_error: 'No se ha podido cargar la cronología', cronologia_durada: 'Duración', cronologia_ultim_any: 'Último año', cronologia_any_titol: 'Cronología último año', cronologia_any_rang: 'De {inici} a {fi}', cronologia_any_carregant: 'Cargando cronología anual…',
+        cronologia_titol: 'Cronología', cronologia_interval: 'Intervalo', cronologia_carregant: 'Cargando cronología…', cronologia_error: 'No se ha podido cargar la cronología', cronologia_durada: 'Duración',
         dispositius_titol: 'Dispositivos', dispositius_connectats: 'Conectados', dispositius_inactius: 'Inactivos', dispositius_total: 'Total', dispositius_maquina: 'Máquina', dispositius_client: 'Cliente', dispositius_estat: 'Estado actual', dispositius_inactiu_5d: 'Última inactividad', dispositius_ultima_connexio: 'Última conexión', dispositius_carregant: 'Cargando dispositivos…', dispositius_error: 'No se han podido cargar los dispositivos', dispositius_usuaris_titol: 'Dispositivos activos por usuario', dispositius_maquines_titol: 'Conectividad de las máquinas', dispositius_usuari: 'Usuario', dispositius_actius: 'Dispositivos activos', dispositius_detall: 'Dispositivos', dispositius_ultima_activitat: 'Última actividad', dispositius_usuaris_actius: 'Usuarios activos', alerta_caiguda_multiple: 'Alerta: {n} máquinas han quedado incomunicadas simultáneamente.', dispositius_auditoria_titol: 'Auditoría de caídas', dispositius_auditoria_buida: 'Aún no hay caídas verificadas en esta ventana.', dispositius_auditoria_ultima: 'Última caída verificada', dispositius_auditoria_simultania: 'Última caída simultánea', dispositius_auditoria_global: 'Posible caída global', dispositius_auditoria_individual: 'Caída individual', dispositius_auditoria_plural: '{n} máquinas', dispositius_auditoria_origen: 'Origen', dispositius_auditoria_tipus: 'Tipo', dispositius_auditoria_finestra: 'Ventana', dispositius_origen_heartbeat_gap: 'Corte de heartbeat', dispositius_origen_deploy_restart: 'Reinicio o despliegue del backend',
         cronologia_producint: 'Produciendo', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada', cronologia_incomunicada: 'Incomunicada',
         taula_codi: 'Código', taula_missatge: 'Mensaje',
@@ -528,7 +516,7 @@
         consums_titol: 'Consumption', consum_aire: 'Air consumption', consum_electric: 'Electric consumption',
         preu_aire: '€/unit air', preu_electric: '€/unit electric',
         mitjana_peca: 'per piece', unitat_aire: 'unit', unitat_electric: 'kWh',
-        cronologia_titol: 'Timeline', cronologia_dia1: 'Day 1', cronologia_dia2: 'Day 2 (compare)', cronologia_carregant: 'Loading timeline…', cronologia_error: 'The timeline could not be loaded', cronologia_durada: 'Duration', cronologia_ultim_any: 'Last year', cronologia_any_titol: 'Last year timeline', cronologia_any_rang: 'From {inici} to {fi}', cronologia_any_carregant: 'Loading yearly timeline…',
+        cronologia_titol: 'Timeline', cronologia_interval: 'Range', cronologia_carregant: 'Loading timeline…', cronologia_error: 'The timeline could not be loaded', cronologia_durada: 'Duration',
         dispositius_titol: 'Devices', dispositius_connectats: 'Connected', dispositius_inactius: 'Inactive', dispositius_total: 'Total', dispositius_maquina: 'Machine', dispositius_client: 'Client', dispositius_estat: 'Current status', dispositius_inactiu_5d: 'Last inactivity', dispositius_ultima_connexio: 'Last connection', dispositius_carregant: 'Loading devices…', dispositius_error: 'The devices could not be loaded', dispositius_usuaris_titol: 'Active devices per user', dispositius_maquines_titol: 'Machine connectivity', dispositius_usuari: 'User', dispositius_actius: 'Active devices', dispositius_detall: 'Devices', dispositius_ultima_activitat: 'Last activity', dispositius_usuaris_actius: 'Active users', alerta_caiguda_multiple: 'Alert: {n} machines went offline simultaneously.', dispositius_auditoria_titol: 'Drop audit', dispositius_auditoria_buida: 'There are no verified drops in this window yet.', dispositius_auditoria_ultima: 'Latest verified drop', dispositius_auditoria_simultania: 'Latest simultaneous drop', dispositius_auditoria_global: 'Possible global outage', dispositius_auditoria_individual: 'Individual drop', dispositius_auditoria_plural: '{n} machines', dispositius_auditoria_origen: 'Source', dispositius_auditoria_tipus: 'Type', dispositius_auditoria_finestra: 'Window', dispositius_origen_heartbeat_gap: 'Heartbeat gap', dispositius_origen_deploy_restart: 'Backend restart or deploy',
         cronologia_producint: 'Producing', cronologia_alarma: 'Alarm', cronologia_parada: 'Stopped', cronologia_incomunicada: 'Offline',
         taula_codi: 'Code', taula_missatge: 'Message',
@@ -561,10 +549,7 @@
       document.getElementById('lbl-preu-electric').textContent = t_('preu_electric');
       document.getElementById('subnav-cronologia').textContent = t_('cronologia_titol');
       document.getElementById('titol-cronologia').textContent = t_('cronologia_titol');
-      document.getElementById('lbl-cronologia-dia1').textContent = t_('cronologia_dia1');
-      document.getElementById('lbl-cronologia-dia2').textContent = t_('cronologia_dia2');
-      document.getElementById('btn-cronologia-any').textContent = t_('cronologia_ultim_any');
-      document.getElementById('titol-cronologia-any').textContent = t_('cronologia_any_titol');
+      document.getElementById('lbl-cronologia-rang').textContent = t_('cronologia_interval');
       pintarLlegendaCronologia_();
       document.getElementById('nav-tab-dispositius').textContent = t_('dispositius_titol');
       document.getElementById('titol-dispositius').textContent = t_('dispositius_titol');
@@ -1556,13 +1541,6 @@
       if (cache) { pintarFitxa(cache.fitxa); pintarProduccio(cache.produccio); }
       carregarDetallMaquina(machineId);
       carregarConsums_();
-      document.getElementById('filtre-cronologia-dia1').value = '';
-      document.getElementById('filtre-cronologia-dia2').value = '';
-      cronologiaAnyVisible_ = false;
-      cronologiaStateAnual_.forEach(function (state) { if (state.chart) state.chart.destroy(); });
-      cronologiaStateAnual_.clear();
-      document.getElementById('cronologia-any-view').classList.add('hidden');
-      document.getElementById('cronologia-any-content').innerHTML = '';
       carregarCronologia_();
       desarVistaActual_();
     }
@@ -1871,12 +1849,7 @@
 
     const COLORS_ESTAT_ = { marxa: '#34d17a', alarma: '#ef4444', parada: '#f5a623', incomunicada: '#8a95a5' };
     const cronologiaStatePrincipal_ = { chart: null, lupaTancamentTimeout: null };
-    const cronologiaStateAnual_ = new Map();
     let cronologiaPeticioId_ = 0;
-    let cronologiaAnyPeticioId_ = 0;
-    let cronologiaAnyVisible_ = false;
-    let cronologiaAnyRangsPendents_ = [];
-    let cronologiaAnyBlocsCarregats_ = [];
 
     function pintarLlegendaCronologia_() {
       const cont = document.getElementById('cronologia-llegenda');
@@ -2110,11 +2083,6 @@
       elements.kpi.innerHTML = skeletonCronologiaHtml_(2);
     }
 
-    function pintarSkeletonCronologiaAny_() {
-      const cont = document.getElementById('cronologia-any-content');
-      cont.innerHTML = skeletonCronologiaHtml_(6);
-    }
-
     function kpisCronologiaHtml_(dies) {
       const teDades = dies.some(dia => (dia.segments || []).length > 0);
       if (!teDades) return `<div class="empty-state">${t_('buit_dades')}</div>`;
@@ -2217,140 +2185,84 @@
       elements.lupa.onmouseleave = function () { programarTancamentLupa_(state, elements); };
     }
 
+    function modeProduccioActual_() {
+      const boto = document.querySelector('#mode-periode-produccio .nav-tab.actiu');
+      return boto ? boto.dataset.mode : 'avui';
+    }
+
+    function clampRangMaxim_(dataInici, dataFi, maxDies) {
+      const inici = new Date(dataInici + 'T12:00:00');
+      const fi = new Date(dataFi + 'T12:00:00');
+      const msDia = 86400000;
+      if (((fi - inici) / msDia) <= (maxDies - 1)) return { dataInici, dataFi };
+      const iniciNou = new Date(fi.getTime() - (maxDies - 1) * msDia);
+      return { dataInici: formatIso_(iniciNou), dataFi };
+    }
+
+    function resumIntervalCronologia_() {
+      if (modeProduccioActual_() === 'avui') {
+        const avui = formatIso_(new Date());
+        return { mode: 'avui', data: avui, text: formatarData_(avui) };
+      }
+      const any = Number(document.getElementById('filtre-any').value || new Date().getFullYear());
+      const mes = Number(document.getElementById('filtre-mes').value || (new Date().getMonth() + 1));
+      let dataInici = document.getElementById('filtre-desde-p').value || formatIso_(new Date(any, mes - 1, 1));
+      let dataFi = document.getElementById('filtre-fins-p').value || formatIso_(new Date(any, mes, 0));
+      const limitat = clampRangMaxim_(dataInici, dataFi, 30);
+      dataInici = limitat.dataInici;
+      dataFi = limitat.dataFi;
+      return { mode: 'periode', dataInici, dataFi, text: formatarData_(dataInici) + ' - ' + formatarData_(dataFi) };
+    }
+
+    function diesAmbReferencia_(dies, referencia) {
+      return (dies || []).filter(function (dia) {
+        return (dia.segments || []).some(function (segment) {
+          return Array.isArray(segment.referencies) && segment.referencies.indexOf(referencia) !== -1;
+        });
+      });
+    }
+
     function carregarCronologia_() {
       const peticioId = ++cronologiaPeticioId_;
       const maquinaId = maquinaActual;
-      const dia1 = document.getElementById('filtre-cronologia-dia1').value || formatIso_(new Date());
-      if (!document.getElementById('filtre-cronologia-dia1').value) document.getElementById('filtre-cronologia-dia1').value = dia1;
-      let dia2 = document.getElementById('filtre-cronologia-dia2').value || null;
-      if (dia2 && dia2 === dia1) {
-        dia2 = null;
-        document.getElementById('filtre-cronologia-dia2').value = '';
-      }
-      const peticions = [
-        { dia: dia1, etiqueta: t_('cronologia_dia1') + ' — ' + formatarData_(dia1) }
-      ];
-      if (dia2) peticions.push({ dia: dia2, etiqueta: t_('cronologia_dia2').replace(/ \(.*\)/, '') + ' — ' + formatarData_(dia2) });
-
+      const referencia = document.getElementById('filtre-referencia').value || null;
+      const resum = resumIntervalCronologia_();
+      document.getElementById('filtre-cronologia-rang').value = resum.text;
       pintarSkeletonCronologiaPrincipal_();
-      Promise.all(peticions.map(p => new Promise((resolve, reject) => {
-        google.script.run
-          .withSuccessHandler(function (resposta) { resolve(Object.assign({}, p, JSON.parse(resposta))); })
-          .withFailureHandler(reject)
-          .getCronologia(token, maquinaId, p.dia);
-      }))).then(function (dies) {
-        if (peticioId !== cronologiaPeticioId_ || maquinaId !== maquinaActual) return;
-        renderCronologiaBloc_(dies, cronologiaStatePrincipal_, obtenirElementsCronologiaPrincipals_());
-      }).catch(function (err) {
-        if (peticioId !== cronologiaPeticioId_ || maquinaId !== maquinaActual) return;
-        errorSessio_(err);
-        pintarEstatCronologia_(t_('cronologia_error'), true);
-      });
-    }
 
-    function formatMesAnyCronologia_(dataIso) {
-      const d = new Date(dataIso + 'T12:00:00Z');
-      return d.toLocaleDateString(idioma_ === 'en' ? 'en-GB' : idioma_ === 'es' ? 'es-ES' : 'ca-ES', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-    }
-
-    function obtenirRangsMensuals_(iniciIso, fiIso) {
-      const inici = new Date(iniciIso + 'T12:00:00Z');
-      const fi = new Date(fiIso + 'T12:00:00Z');
-      const rangs = [];
-      let cursor = new Date(Date.UTC(inici.getUTCFullYear(), inici.getUTCMonth(), 1));
-      while (cursor <= fi) {
-        const any = cursor.getUTCFullYear();
-        const mes = cursor.getUTCMonth();
-        const iniciMes = new Date(Date.UTC(any, mes, 1));
-        const fiMes = new Date(Date.UTC(any, mes + 1, 0));
-        const dataInici = (iniciMes < inici ? inici : iniciMes).toISOString().slice(0, 10);
-        const dataFi = (fiMes > fi ? fi : fiMes).toISOString().slice(0, 10);
-        rangs.push({ clau: dataInici.slice(0, 7), dataInici, dataFi });
-        cursor = new Date(Date.UTC(any, mes + 1, 1));
-      }
-      return rangs.reverse();
-    }
-
-    function carregarBlocCronologiaAnySeguente_() {
-      if (!cronologiaAnyRangsPendents_.length) return Promise.resolve();
-      const rang = cronologiaAnyRangsPendents_.shift();
-      return new Promise(function (resolve) {
+      if (resum.mode === 'avui') {
         google.script.run
           .withSuccessHandler(function (resposta) {
-            const dades = typeof resposta === 'string' ? JSON.parse(resposta) : resposta;
-            cronologiaAnyBlocsCarregats_.push({ mes: rang.clau, dies: Array.isArray(dades.dies) ? dades.dies : [] });
-            resolve();
+            if (peticioId !== cronologiaPeticioId_ || maquinaId !== maquinaActual) return;
+            const dia = JSON.parse(resposta);
+            renderCronologiaBloc_([{ dia: dia.data, etiqueta: formatarData_(dia.data), segments: dia.segments || [] }], cronologiaStatePrincipal_, obtenirElementsCronologiaPrincipals_());
           })
-          .withFailureHandler(function () {
-            cronologiaAnyBlocsCarregats_.push({ mes: rang.clau, dies: [] });
-            resolve();
+          .withFailureHandler(function (err) {
+            if (peticioId !== cronologiaPeticioId_ || maquinaId !== maquinaActual) return;
+            errorSessio_(err);
+            pintarEstatCronologia_(t_('cronologia_error'), true);
           })
-          .getCronologiaRang(token, maquinaActual, rang.dataInici, rang.dataFi);
-      });
-    }
-
-    async function carregarCronologiaAny_() {
-      const peticioId = ++cronologiaAnyPeticioId_;
-      const maquinaId = maquinaActual;
-      cronologiaAnyVisible_ = true;
-      cronologiaAnyBlocsCarregats_ = [];
-      document.getElementById('cronologia-any-view').classList.remove('hidden');
-      const fi = formatIso_(new Date());
-      const iniciDate = new Date();
-      iniciDate.setDate(iniciDate.getDate() - 364);
-      const inici = formatIso_(iniciDate);
-      document.getElementById('cronologia-any-rang').textContent = t_('cronologia_any_rang').replace('{inici}', formatarData_(inici)).replace('{fi}', formatarData_(fi));
-      pintarSkeletonCronologiaAny_();
-      cronologiaAnyRangsPendents_ = obtenirRangsMensuals_(inici, fi);
-      await carregarBlocCronologiaAnySeguente_();
-      if (peticioId !== cronologiaAnyPeticioId_ || maquinaId !== maquinaActual) return;
-      renderCronologiaAnyBlocs_(cronologiaAnyBlocsCarregats_);
-    }
-
-    function renderCronologiaAnyBlocs_(blocs) {
-      cronologiaStateAnual_.forEach(function (state) { if (state.chart) state.chart.destroy(); });
-      cronologiaStateAnual_.clear();
-      const perMes = {};
-      (blocs || []).forEach(function (bloc) {
-        perMes[bloc.mes] = (bloc.dies || []).map(function (dia) {
-          return { dia: dia.data, etiqueta: formatarData_(dia.data), segments: dia.segments || [] };
-        }).filter(function (dia) {
-          return Array.isArray(dia.segments) && dia.segments.length > 0;
-        });
-      });
-      const mesosOrdenats = Object.keys(perMes).sort(function (a, b) { return a < b ? 1 : -1; });
-      const mesosRender = mesosOrdenats.filter(function (mes) { return (perMes[mes] || []).length > 0; });
-      const cont = document.getElementById('cronologia-any-content');
-      cont.innerHTML = mesosRender.map(function (mes) {
-        const blocId = 'cronologia-any-' + mes.replace('-', '');
-        return `<section class="cronologia-any-bloc"><h5>${escHtml_(formatMesAnyCronologia_(mes + '-01'))}</h5><div class="cronologia-llegenda">${document.getElementById('cronologia-llegenda').innerHTML}</div><div class="grafic-wrap cronologia-grafic-wrap cronologia-any-chart"><canvas id="${blocId}-canvas" height="${Math.max(120, perMes[mes].length * 34)}"></canvas><div class="cronologia-lupa" id="${blocId}-lupa" hidden aria-live="polite"><div class="cronologia-lupa-estat" id="${blocId}-estat"></div><div class="cronologia-lupa-hora" id="${blocId}-hora"></div><div class="cronologia-lupa-trams" id="${blocId}-trams"></div><div class="cronologia-lupa-extra" id="${blocId}-extra"></div></div></div><div class="kpi-row hidden" id="${blocId}-kpi"></div></section>`;
-      }).join('') || `<div class="empty-state">${t_('buit_dades')}</div>`;
-      if (cronologiaAnyRangsPendents_.length) {
-        cont.innerHTML += `<div class="cronologia-any-loadmore"><button type="button" class="secondary-btn" id="btn-cronologia-any-more">Cargar mes anterior</button></div>`;
+          .getCronologia(token, maquinaId, resum.data);
+        return;
       }
-      mesosRender.forEach(function (mes) {
-        const blocId = 'cronologia-any-' + mes.replace('-', '');
-        const state = { chart: null, lupaTancamentTimeout: null };
-        cronologiaStateAnual_.set(blocId, state);
-        renderCronologiaBloc_(perMes[mes], state, {
-          canvas: document.getElementById(blocId + '-canvas'),
-          lupa: document.getElementById(blocId + '-lupa'),
-          lupaEstat: document.getElementById(blocId + '-estat'),
-          lupaHora: document.getElementById(blocId + '-hora'),
-          lupaTrams: document.getElementById(blocId + '-trams'),
-          lupaExtra: document.getElementById(blocId + '-extra'),
-          kpi: document.getElementById(blocId + '-kpi')
-        });
-      });
-      const botoMesAnterior = document.getElementById('btn-cronologia-any-more');
-      if (botoMesAnterior) {
-        botoMesAnterior.addEventListener('click', async function () {
-          botoMesAnterior.disabled = true;
-          botoMesAnterior.textContent = t_('cronologia_carregant');
-          await carregarBlocCronologiaAnySeguente_();
-          renderCronologiaAnyBlocs_(cronologiaAnyBlocsCarregats_);
-        });
-      }
+
+      google.script.run
+        .withSuccessHandler(function (resposta) {
+          if (peticioId !== cronologiaPeticioId_ || maquinaId !== maquinaActual) return;
+          const dades = JSON.parse(resposta);
+          let dies = Array.isArray(dades.dies) ? dades.dies.map(function (dia) {
+            return { dia: dia.data, etiqueta: formatarData_(dia.data), segments: dia.segments || [] };
+          }) : [];
+          dies = referencia ? diesAmbReferencia_(dies, referencia) : dies.filter(function (dia) { return (dia.segments || []).length > 0; });
+          dies = dies.slice(-30);
+          renderCronologiaBloc_(dies, cronologiaStatePrincipal_, obtenirElementsCronologiaPrincipals_());
+        })
+        .withFailureHandler(function (err) {
+          if (peticioId !== cronologiaPeticioId_ || maquinaId !== maquinaActual) return;
+          errorSessio_(err);
+          pintarEstatCronologia_(t_('cronologia_error'), true);
+        })
+        .getCronologiaRang(token, maquinaId, resum.dataInici, resum.dataFi);
     }
 
     let graficDispositius_ = null;
@@ -2953,20 +2865,37 @@
       const boto = event.target.closest('[data-mode]');
       if (!boto) return;
       canviarModeProduccio_(boto.dataset.mode);
+      carregarCronologia_();
     });
 
-    document.getElementById('filtre-any').addEventListener('change', carregarProduccio);
-    document.getElementById('filtre-mes').addEventListener('change', carregarProduccio);
-    document.getElementById('filtre-referencia').addEventListener('change', carregarProduccio);
+    document.getElementById('filtre-any').addEventListener('change', function () {
+      carregarProduccio();
+      carregarCronologia_();
+    });
+    document.getElementById('filtre-mes').addEventListener('change', function () {
+      carregarProduccio();
+      carregarCronologia_();
+    });
+    document.getElementById('filtre-referencia').addEventListener('change', function () {
+      carregarProduccio();
+      carregarCronologia_();
+    });
     document.getElementById('filtre-desde-p').addEventListener('click', function () { obrirDatePicker_(this); });
     document.getElementById('filtre-fins-p').addEventListener('click', function () { obrirDatePicker_(this); });
-    document.getElementById('filtre-desde-p').addEventListener('change', carregarProduccio);
-    document.getElementById('filtre-fins-p').addEventListener('change', carregarProduccio);
+    document.getElementById('filtre-desde-p').addEventListener('change', function () {
+      carregarProduccio();
+      carregarCronologia_();
+    });
+    document.getElementById('filtre-fins-p').addEventListener('change', function () {
+      carregarProduccio();
+      carregarCronologia_();
+    });
     document.getElementById('filtre-torn').addEventListener('click', function (event) {
       const boto = event.target.closest('[data-torn]');
       if (!boto) return;
       boto.classList.toggle('actiu');
       carregarProduccio(true);
+      carregarCronologia_();
     });
 
     document.getElementById('filtre-desde').addEventListener('change', () => carregarFitxa(maquinaActual));
@@ -2992,15 +2921,6 @@
     document.getElementById('filtre-fins-c').addEventListener('click', function () { obrirDatePicker_(this); });
     document.getElementById('input-preu-aire').addEventListener('change', guardarPreusConsum_);
     document.getElementById('input-preu-electric').addEventListener('change', guardarPreusConsum_);
-    document.getElementById('filtre-cronologia-dia1').addEventListener('click', function () { obrirDatePicker_(this); });
-    document.getElementById('filtre-cronologia-dia2').addEventListener('click', function () { obrirDatePicker_(this); });
-    document.getElementById('filtre-cronologia-dia1').addEventListener('change', carregarCronologia_);
-    document.getElementById('filtre-cronologia-dia2').addEventListener('change', carregarCronologia_);
-    document.getElementById('btn-cronologia-any').addEventListener('click', function () {
-      cronologiaAnyVisible_ = !cronologiaAnyVisible_;
-      document.getElementById('cronologia-any-view').classList.toggle('hidden', !cronologiaAnyVisible_);
-      if (cronologiaAnyVisible_) carregarCronologiaAny_();
-    });
     document.getElementById('filtre-desde-c').addEventListener('change', carregarConsums_);
     document.getElementById('filtre-fins-c').addEventListener('change', carregarConsums_);
 
