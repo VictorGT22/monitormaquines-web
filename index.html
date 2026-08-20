@@ -2444,7 +2444,14 @@
 
     function renderDispositiusLog_(dades) {
       dadesDispositiusCache_ = dades;
-      const serie = Array.isArray(dades.serie) ? dades.serie : [];
+      const araClient = Date.now();
+      const iniciVisualMs = dades && dades.iniciVisual ? new Date(dades.iniciVisual).getTime() : null;
+      const serie = (Array.isArray(dades.serie) ? dades.serie : []).filter(function (punt) {
+        const ms = new Date(punt.timestamp).getTime();
+        if (!Number.isFinite(ms)) return false;
+        if (iniciVisualMs && ms < iniciVisualMs) return false;
+        return ms <= araClient;
+      });
       const dispositius = Array.isArray(dades.dispositius) ? dades.dispositius : [];
       const sessionsUsuaris = Array.isArray(dades.sessionsUsuaris) ? dades.sessionsUsuaris : [];
       const auditoria = dades.auditoriaConnectivitat || {};
