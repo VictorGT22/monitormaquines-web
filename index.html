@@ -2396,7 +2396,7 @@
       ].map(kpi => `<div class="kpi"><div class="valor">${kpi[1]}</div><div class="etiqueta">${kpi[0]}</div></div>`).join('');
       document.getElementById('sessions-usuaris-taula').innerHTML = sessionsUsuaris.map(function (u) {
         const primerDispositiu = (u.dispositius || [])[0] || {};
-        const ubicacio = (primerDispositiu.ubicacioAprox || '') + ((primerDispositiu.ip || '') ? ` · ${primerDispositiu.ip}` : '');
+        const ubicacio = primerDispositiu.ubicacioAprox || '';
         const risc = (u.dispositius || []).map(d => d.seguretatIp && d.seguretatIp.etiqueta_risc).filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' · ');
         const detall = `<div class="sessions-dispositius">` + (u.dispositius || []).map(function (d) {
           const meta = [d.ubicacioAprox, d.proveidorXarxa, d.ip].filter(Boolean).join(' · ');
