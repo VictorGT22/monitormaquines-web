@@ -91,6 +91,9 @@ const IMPL = {
     const dades = await apiFetch_(`/maquines/${machineId}/cronologia` + qs_({ data }), { token });
     return JSON.stringify(dades);
   },
+  async getDispositiusLog(token) {
+    return apiFetch_('/dispositius-log', { token });
+  },
   async getPreusConsum(token) {
     return apiFetch_('/preus-consum', { token });
   },
