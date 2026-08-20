@@ -421,7 +421,7 @@
         preu_aire: '€/unitat aire', preu_electric: '€/unitat elèctric',
         mitjana_peca: 'per peça', unitat_aire: 'unitat', unitat_electric: 'kWh',
         cronologia_titol: 'Cronologia', cronologia_dia1: 'Dia 1', cronologia_dia2: 'Dia 2 (comparar)',
-        cronologia_producint: 'Producint', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada',
+        cronologia_producint: 'Produint', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada',
         taula_codi: 'Codi', taula_missatge: 'Missatge',
         buit_dades: 'Sense dades', buit_paradas: 'Sense paradas en aquest període', buit_incidencies: "Sense incidències en aquest període",
         admin_client: 'Client', admin_totsClients: 'Tots els clients', admin_cercar: 'Cercar per nom...', admin_cercarLbl: 'Cercar',
@@ -1751,7 +1751,11 @@
     function carregarCronologia_() {
       const dia1 = document.getElementById('filtre-cronologia-dia1').value || formatIso_(new Date());
       if (!document.getElementById('filtre-cronologia-dia1').value) document.getElementById('filtre-cronologia-dia1').value = dia1;
-      const dia2 = document.getElementById('filtre-cronologia-dia2').value || null;
+      let dia2 = document.getElementById('filtre-cronologia-dia2').value || null;
+      if (dia2 && dia2 === dia1) {
+        dia2 = null;
+        document.getElementById('filtre-cronologia-dia2').value = '';
+      }
       const peticions = [
         { dia: dia1, etiqueta: t_('cronologia_dia1') + ' — ' + formatarData_(dia1) }
       ];
