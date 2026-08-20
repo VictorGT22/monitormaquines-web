@@ -1778,7 +1778,7 @@
         (dia.segments || []).forEach(function (s) {
           const minInici = (new Date(s.inici).getTime() - midnight) / 60000;
           const minFi = (new Date(s.fi).getTime() - midnight) / 60000;
-          dataset.push({ x: [minInici, minFi], y: dia.etiqueta, estat: s.estat });
+          dataset.push({ x: [minInici, minFi], y: dia.etiqueta, estat: s.estat, referencies: s.referencies, alarmes: s.alarmes });
         });
       });
       const labels = dies.map(d => d.etiqueta);
@@ -1804,6 +1804,15 @@
                 label: function (c) {
                   const etiquetaEstat = c.raw.estat === 'marxa' ? t_('cronologia_producint') : (c.raw.estat === 'alarma' ? t_('cronologia_alarma') : t_('cronologia_parada'));
                   return etiquetaEstat + ': ' + formatMinutsHora_(c.raw.x[0]) + ' – ' + formatMinutsHora_(c.raw.x[1]);
+                },
+                afterLabel: function (c) {
+                  if (c.raw.estat === 'marxa' && c.raw.referencies && c.raw.referencies.length) {
+                    return t_('f_referencia') + ': ' + c.raw.referencies.join(', ');
+                  }
+                  if (c.raw.estat === 'alarma' && c.raw.alarmes && c.raw.alarmes.length) {
+                    return c.raw.alarmes.map(a => a.codi + ' — ' + a.missatge);
+                  }
+                  return null;
                 }
               }
             }
