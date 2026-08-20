@@ -421,7 +421,7 @@
         preu_aire: '€/unitat aire', preu_electric: '€/unitat elèctric',
         mitjana_peca: 'per peça', unitat_aire: 'unitat', unitat_electric: 'kWh',
         cronologia_titol: 'Cronologia', cronologia_dia1: 'Dia 1', cronologia_dia2: 'Dia 2 (comparar)',
-        cronologia_producint: 'Produint', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada',
+        cronologia_producint: 'Produint', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada', cronologia_incomunicada: 'Incomunicada',
         taula_codi: 'Codi', taula_missatge: 'Missatge',
         buit_dades: 'Sense dades', buit_paradas: 'Sense paradas en aquest període', buit_incidencies: "Sense incidències en aquest període",
         admin_client: 'Client', admin_totsClients: 'Tots els clients', admin_cercar: 'Cercar per nom...', admin_cercarLbl: 'Cercar',
@@ -448,7 +448,7 @@
         preu_aire: '€/unidad aire', preu_electric: '€/unidad eléctrico',
         mitjana_peca: 'por pieza', unitat_aire: 'unidad', unitat_electric: 'kWh',
         cronologia_titol: 'Cronología', cronologia_dia1: 'Día 1', cronologia_dia2: 'Día 2 (comparar)',
-        cronologia_producint: 'Produciendo', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada',
+        cronologia_producint: 'Produciendo', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada', cronologia_incomunicada: 'Incomunicada',
         taula_codi: 'Código', taula_missatge: 'Mensaje',
         buit_dades: 'Sin datos', buit_paradas: 'Sin paradas en este período', buit_incidencies: 'Sin incidencias en este período',
         admin_client: 'Cliente', admin_totsClients: 'Todos los clientes', admin_cercar: 'Buscar por nombre...', admin_cercarLbl: 'Buscar',
@@ -475,7 +475,7 @@
         preu_aire: '€/unit air', preu_electric: '€/unit electric',
         mitjana_peca: 'per piece', unitat_aire: 'unit', unitat_electric: 'kWh',
         cronologia_titol: 'Timeline', cronologia_dia1: 'Day 1', cronologia_dia2: 'Day 2 (compare)',
-        cronologia_producint: 'Producing', cronologia_alarma: 'Alarm', cronologia_parada: 'Stopped',
+        cronologia_producint: 'Producing', cronologia_alarma: 'Alarm', cronologia_parada: 'Stopped', cronologia_incomunicada: 'Offline',
         taula_codi: 'Code', taula_missatge: 'Message',
         buit_dades: 'No data', buit_paradas: 'No stops in this period', buit_incidencies: 'No alerts in this period',
         admin_client: 'Client', admin_totsClients: 'All clients', admin_cercar: 'Search by name...', admin_cercarLbl: 'Search',
@@ -1729,17 +1729,24 @@
       });
     }
 
-    const COLORS_ESTAT_ = { marxa: '#34d17a', alarma: '#ef4444', parada: '#f5a623' };
+    const COLORS_ESTAT_ = { marxa: '#34d17a', alarma: '#ef4444', parada: '#f5a623', incomunicada: '#8a95a5' };
     let graficCronologia_ = null;
 
     function pintarLlegendaCronologia_() {
       const cont = document.getElementById('cronologia-llegenda');
       if (!cont) return;
-      const claus = ['marxa', 'alarma', 'parada'];
-      const etiquetes = { marxa: t_('cronologia_producint'), alarma: t_('cronologia_alarma'), parada: t_('cronologia_parada') };
+      const claus = ['marxa', 'alarma', 'parada', 'incomunicada'];
+      const etiquetes = { marxa: t_('cronologia_producint'), alarma: t_('cronologia_alarma'), parada: t_('cronologia_parada'), incomunicada: t_('cronologia_incomunicada') };
       cont.innerHTML = claus.map(c =>
         `<span class="cronologia-chip"><i style="background:${COLORS_ESTAT_[c]}"></i>${etiquetes[c]}</span>`
       ).join('');
+    }
+
+    function etiquetaEstatCronologia_(estat) {
+      if (estat === 'marxa') return t_('cronologia_producint');
+      if (estat === 'alarma') return t_('cronologia_alarma');
+      if (estat === 'incomunicada') return t_('cronologia_incomunicada');
+      return t_('cronologia_parada');
     }
 
     function formatMinutsHora_(min) {
@@ -1802,8 +1809,7 @@
             tooltip: {
               callbacks: {
                 label: function (c) {
-                  const etiquetaEstat = c.raw.estat === 'marxa' ? t_('cronologia_producint') : (c.raw.estat === 'alarma' ? t_('cronologia_alarma') : t_('cronologia_parada'));
-                  return etiquetaEstat + ': ' + formatMinutsHora_(c.raw.x[0]) + ' – ' + formatMinutsHora_(c.raw.x[1]);
+                  return etiquetaEstatCronologia_(c.raw.estat) + ': ' + formatMinutsHora_(c.raw.x[0]) + ' – ' + formatMinutsHora_(c.raw.x[1]);
                 },
                 afterLabel: function (c) {
                   if (c.raw.estat === 'marxa' && c.raw.referencies && c.raw.referencies.length) {
@@ -1837,7 +1843,7 @@
     function pintarKpiCronologia_(dies) {
       const cont = document.getElementById('kpi-row-cronologia');
       cont.innerHTML = dies.map(function (dia) {
-        const totals = { marxa: 0, alarma: 0, parada: 0 };
+        const totals = { marxa: 0, alarma: 0, parada: 0, incomunicada: 0 };
         (dia.segments || []).forEach(function (s) {
           if (totals[s.estat] === undefined) return;
           totals[s.estat] += (new Date(s.fi) - new Date(s.inici)) / 3600000;
@@ -1845,7 +1851,8 @@
         const parts = [
           `${t_('cronologia_producint')}: ${totals.marxa.toFixed(1)}h`,
           `${t_('cronologia_alarma')}: ${totals.alarma.toFixed(1)}h`,
-          `${t_('cronologia_parada')}: ${totals.parada.toFixed(1)}h`
+          `${t_('cronologia_parada')}: ${totals.parada.toFixed(1)}h`,
+          `${t_('cronologia_incomunicada')}: ${totals.incomunicada.toFixed(1)}h`
         ];
         return `<div class="kpi"><div class="valor" style="font-size:13px">${parts.join(' · ')}</div><div class="etiqueta">${dia.etiqueta}</div></div>`;
       }).join('') || `<div class="empty-state">${t_('buit_dades')}</div>`;
