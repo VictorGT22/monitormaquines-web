@@ -94,6 +94,10 @@ const IMPL = {
     const dades = await apiFetch_(`/maquines/${machineId}/cronologia` + qs_({ data }), { token });
     return JSON.stringify(dades);
   },
+  async getCronologiaRang(token, machineId, dataInici, dataFi) {
+    const dades = await apiFetch_(`/maquines/${machineId}/cronologia-rang` + qs_({ dataInici, dataFi }), { token });
+    return JSON.stringify(dades);
+  },
   async getDispositiusLog(token) {
     const dades = await apiFetch_('/dispositius-log', { token });
     return JSON.stringify(dades);
