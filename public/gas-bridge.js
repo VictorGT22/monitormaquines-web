@@ -87,6 +87,10 @@ const IMPL = {
     const dades = await apiFetch_(`/maquines/${machineId}/consums` + qs_({ tipus, dataInici, dataFi }), { token });
     return JSON.stringify(dades);
   },
+  async getCronologia(token, machineId, data) {
+    const dades = await apiFetch_(`/maquines/${machineId}/cronologia` + qs_({ data }), { token });
+    return JSON.stringify(dades);
+  },
   async getPreusConsum(token) {
     return apiFetch_('/preus-consum', { token });
   },
