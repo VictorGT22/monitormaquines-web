@@ -1859,7 +1859,7 @@
     }
 
     function programarTancamentLupa_() {
-      cancelLarTancamentLupa_();
+      if (lupaTancamentTimeout_) return;
       lupaTancamentTimeout_ = setTimeout(amagarLupaCronologia_, 3000);
     }
 
