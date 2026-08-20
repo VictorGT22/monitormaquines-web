@@ -299,7 +299,15 @@
             </div>
           </div>
           <div class="cronologia-llegenda" id="cronologia-llegenda"></div>
-          <div class="grafic-wrap"><canvas id="grafic-cronologia" height="130"></canvas></div>
+          <div class="grafic-wrap cronologia-grafic-wrap">
+            <canvas id="grafic-cronologia" height="130"></canvas>
+            <div class="cronologia-lupa" id="cronologia-lupa" hidden aria-live="polite">
+              <div class="cronologia-lupa-estat" id="cronologia-lupa-estat"></div>
+              <div class="cronologia-lupa-hora" id="cronologia-lupa-hora"></div>
+              <div class="cronologia-lupa-trams" id="cronologia-lupa-trams"></div>
+              <div class="cronologia-lupa-extra" id="cronologia-lupa-extra"></div>
+            </div>
+          </div>
           <div class="kpi-row" id="kpi-row-cronologia"></div>
         </div>
 
@@ -1837,6 +1845,59 @@
       }, []);
     }
 
+    function amagarLupaCronologia_() {
+      document.getElementById('cronologia-lupa').hidden = true;
+    }
+
+    function mostrarLupaCronologia_(event, actius, chart) {
+      if (!actius.length) { amagarLupaCronologia_(); return; }
+      const actiu = actius[0];
+      const raw = chart.data.datasets[actiu.datasetIndex].data[actiu.index];
+      const duradaMin = raw.x[1] - raw.x[0];
+      if (duradaMin >= 4) { amagarLupaCronologia_(); return; }
+
+      const lupa = document.getElementById('cronologia-lupa');
+      const canvas = document.getElementById('grafic-cronologia');
+      const wrap = canvas.parentElement;
+      const centre = (raw.x[0] + raw.x[1]) / 2;
+      const marge = Math.max(2, duradaMin * 2);
+      const iniciVista = Math.max(0, centre - marge);
+      const fiVista = Math.min(1440, centre + marge);
+      const ampleVista = Math.max(1 / 60, fiVista - iniciVista);
+
+      document.getElementById('cronologia-lupa-estat').textContent = etiquetaEstatCronologia_(raw.estat);
+      document.getElementById('cronologia-lupa-hora').textContent =
+        formatMinutsHoraPrecisa_(raw.x[0], true) + ' – ' + formatMinutsHoraPrecisa_(raw.x[1], true) +
+        ' · ' + t_('cronologia_durada') + ': ' + Math.max(1, Math.round(duradaMin * 60)) + ' s';
+
+      const trams = document.getElementById('cronologia-lupa-trams');
+      trams.innerHTML = '';
+      chart.data.datasets[actiu.datasetIndex].data
+        .filter(d => d.y === raw.y && d.x[0] < fiVista && d.x[1] > iniciVista)
+        .forEach(d => {
+          const barra = document.createElement('span');
+          const esquerra = Math.max(0, (d.x[0] - iniciVista) / ampleVista * 100);
+          const dreta = Math.min(100, (d.x[1] - iniciVista) / ampleVista * 100);
+          barra.style.left = esquerra + '%';
+          barra.style.width = Math.max(2, dreta - esquerra) + '%';
+          barra.style.background = COLORS_ESTAT_[d.estat];
+          if (d === raw) barra.className = 'actiu';
+          trams.appendChild(barra);
+        });
+
+      const extres = [];
+      if (raw.referencies && raw.referencies.length) extres.push(t_('f_referencia') + ': ' + raw.referencies.join(', '));
+      if (raw.alarmes && raw.alarmes.length) extres.push.apply(extres, raw.alarmes.map(a => a.codi + ' — ' + a.missatge));
+      document.getElementById('cronologia-lupa-extra').textContent = extres.join(' · ');
+
+      const x = Math.max(102, Math.min(wrap.clientWidth - 102, canvas.offsetLeft + event.x));
+      const y = canvas.offsetTop + event.y;
+      lupa.style.left = x + 'px';
+      lupa.style.top = (y - 18) + 'px';
+      lupa.style.transform = 'translate(-50%, -100%)';
+      lupa.hidden = false;
+    }
+
     function carregarCronologia_() {
       const peticioId = ++cronologiaPeticioId_;
       const maquinaId = maquinaActual;
@@ -1913,10 +1974,12 @@
         options: {
           indexAxis: 'y',
           responsive: true, maintainAspectRatio: false,
-          interaction: { mode: 'nearest', axis: 'xy', intersect: false },
+          interaction: { mode: 'nearest', axis: 'xy', intersect: true },
+          onHover: mostrarLupaCronologia_,
           plugins: {
             legend: { display: false },
             tooltip: {
+              filter: function (c) { return (c.raw.x[1] - c.raw.x[0]) >= 4; },
               callbacks: {
                 label: function (c) {
                   const duradaMin = c.raw.x[1] - c.raw.x[0];
@@ -1953,6 +2016,7 @@
       }
       if (typeof Chart === 'undefined') return;
       graficCronologia_ = new Chart(ctx, config);
+      ctx.onmouseleave = amagarLupaCronologia_;
     }
 
     function pintarKpiCronologia_(dies) {
