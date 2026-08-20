@@ -1904,6 +1904,13 @@
       const directes = chart.getElementsAtEventForMode(event.native, 'nearest', { intersect: true }, false);
       document.getElementById('grafic-cronologia').style.cursor = directes.length &&
         ['alarma', 'parada'].includes(chart.data.datasets[directes[0].datasetIndex].data[directes[0].index].estat) ? 'pointer' : 'default';
+      if (directes.length) {
+        const rawDirecte = chart.data.datasets[directes[0].datasetIndex].data[directes[0].index];
+        if ((rawDirecte.x[1] - rawDirecte.x[0]) >= 4) {
+          programarTancamentLupa_();
+          return;
+        }
+      }
       const element = chart.getDatasetMeta(actiu.datasetIndex).data[actiu.index];
       if (Math.abs(event.y - element.y) > Math.max(16, (Number(element.height) || 28) / 2 + 8)) {
         programarTancamentLupa_();
@@ -1954,9 +1961,8 @@
       };
 
       const x = Math.max(132, Math.min(wrap.clientWidth - 132, canvas.offsetLeft + event.x));
-      const y = canvas.offsetTop + event.y;
       lupa.style.left = x + 'px';
-      lupa.style.top = (y - 12) + 'px';
+      lupa.style.top = '-16px';
       lupa.style.transform = 'translate(-50%, -100%)';
       lupa.hidden = false;
     }

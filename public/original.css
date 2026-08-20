@@ -652,6 +652,7 @@
   .oee-dot.qual { background: var(--verd); }
 
   .grafic-wrap { height: 220px; margin-bottom: 18px; }
+  .grafic-wrap canvas { display: block; width: 100% !important; height: 100% !important; }
   .cronologia-grafic-wrap { position: relative; }
   .cronologia-lupa {
     position: absolute; z-index: 20; width: 264px; height: 264px; padding: 46px 28px 30px;
