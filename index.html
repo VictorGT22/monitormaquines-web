@@ -2269,7 +2269,7 @@
       return rangs.reverse();
     }
 
-    function carregarCronologiaAny_() {
+    async function carregarCronologiaAny_() {
       const peticioId = ++cronologiaAnyPeticioId_;
       const maquinaId = maquinaActual;
       cronologiaAnyVisible_ = true;
@@ -2281,54 +2281,59 @@
       document.getElementById('cronologia-any-rang').textContent = t_('cronologia_any_rang').replace('{inici}', formatarData_(inici)).replace('{fi}', formatarData_(fi));
       pintarSkeletonCronologiaAny_();
       const rangs = obtenirRangsMensuals_(inici, fi);
-      Promise.allSettled(rangs.map(function (rang) {
-        return new Promise(function (resolve, reject) {
-          google.script.run
-            .withSuccessHandler(function (resposta) {
-              const dades = typeof resposta === 'string' ? JSON.parse(resposta) : resposta;
-              resolve({ mes: rang.clau, dies: Array.isArray(dades.dies) ? dades.dies : [] });
-            })
-            .withFailureHandler(reject)
-            .getCronologiaRang(token, maquinaId, rang.dataInici, rang.dataFi);
-        });
-      })).then(function (resultats) {
+      const cont = document.getElementById('cronologia-any-content');
+      const resultats = [];
+      for (const rang of rangs) {
         if (peticioId !== cronologiaAnyPeticioId_ || maquinaId !== maquinaActual) return;
-        cronologiaStateAnual_.forEach(function (state) { if (state.chart) state.chart.destroy(); });
-        cronologiaStateAnual_.clear();
-        const perMes = {};
-        resultats.forEach(function (resultat, idx) {
-          const rang = rangs[idx];
-          const bloc = resultat.status === 'fulfilled'
-            ? resultat.value
-            : { mes: rang.clau, dies: [] };
-          perMes[bloc.mes] = (bloc.dies || []).map(function (dia) {
-            return { dia: dia.data, etiqueta: formatarData_(dia.data), segments: dia.segments || [] };
+        try {
+          const bloc = await new Promise(function (resolve, reject) {
+            google.script.run
+              .withSuccessHandler(function (resposta) {
+                const dades = typeof resposta === 'string' ? JSON.parse(resposta) : resposta;
+                resolve({ mes: rang.clau, dies: Array.isArray(dades.dies) ? dades.dies : [] });
+              })
+              .withFailureHandler(reject)
+              .getCronologiaRang(token, maquinaId, rang.dataInici, rang.dataFi);
           });
+          resultats.push(bloc);
+        } catch (e) {
+          resultats.push({ mes: rang.clau, dies: [] });
+        }
+        if (peticioId !== cronologiaAnyPeticioId_ || maquinaId !== maquinaActual) return;
+        renderCronologiaAnyBlocs_(resultats);
+      }
+    }
+
+    function renderCronologiaAnyBlocs_(blocs) {
+      cronologiaStateAnual_.forEach(function (state) { if (state.chart) state.chart.destroy(); });
+      cronologiaStateAnual_.clear();
+      const perMes = {};
+      (blocs || []).forEach(function (bloc) {
+        perMes[bloc.mes] = (bloc.dies || []).map(function (dia) {
+          return { dia: dia.data, etiqueta: formatarData_(dia.data), segments: dia.segments || [] };
+        }).filter(function (dia) {
+          return Array.isArray(dia.segments) && dia.segments.length > 0;
         });
-        const mesosOrdenats = Object.keys(perMes).sort(function (a, b) { return a < b ? 1 : -1; });
-        const mesosAmbDades = mesosOrdenats.filter(function (mes) {
-          return (perMes[mes] || []).some(function (dia) { return Array.isArray(dia.segments) && dia.segments.length; });
-        });
-        const mesosSenseDades = mesosOrdenats.filter(function (mes) { return mesosAmbDades.indexOf(mes) === -1; });
-        const mesosRender = mesosAmbDades.concat(mesosSenseDades.slice(0, 2));
-        const cont = document.getElementById('cronologia-any-content');
-        cont.innerHTML = mesosRender.map(function (mes) {
-          const blocId = 'cronologia-any-' + mes.replace('-', '');
-          return `<section class="cronologia-any-bloc"><h5>${escHtml_(formatMesAnyCronologia_(mes + '-01'))}</h5><div class="cronologia-llegenda">${document.getElementById('cronologia-llegenda').innerHTML}</div><div class="grafic-wrap cronologia-grafic-wrap cronologia-any-chart"><canvas id="${blocId}-canvas" height="${Math.max(120, perMes[mes].length * 34)}"></canvas><div class="cronologia-lupa" id="${blocId}-lupa" hidden aria-live="polite"><div class="cronologia-lupa-estat" id="${blocId}-estat"></div><div class="cronologia-lupa-hora" id="${blocId}-hora"></div><div class="cronologia-lupa-trams" id="${blocId}-trams"></div><div class="cronologia-lupa-extra" id="${blocId}-extra"></div></div></div><div class="kpi-row" id="${blocId}-kpi"></div></section>`;
-        }).join('') || `<div class="empty-state">${t_('buit_dades')}</div>`;
-        mesosRender.forEach(function (mes) {
-          const blocId = 'cronologia-any-' + mes.replace('-', '');
-          const state = { chart: null, lupaTancamentTimeout: null };
-          cronologiaStateAnual_.set(blocId, state);
-          renderCronologiaBloc_(perMes[mes], state, {
-            canvas: document.getElementById(blocId + '-canvas'),
-            lupa: document.getElementById(blocId + '-lupa'),
-            lupaEstat: document.getElementById(blocId + '-estat'),
-            lupaHora: document.getElementById(blocId + '-hora'),
-            lupaTrams: document.getElementById(blocId + '-trams'),
-            lupaExtra: document.getElementById(blocId + '-extra'),
-            kpi: document.getElementById(blocId + '-kpi')
-          });
+      });
+      const mesosOrdenats = Object.keys(perMes).sort(function (a, b) { return a < b ? 1 : -1; });
+      const mesosRender = mesosOrdenats.filter(function (mes) { return (perMes[mes] || []).length > 0; });
+      const cont = document.getElementById('cronologia-any-content');
+      cont.innerHTML = mesosRender.map(function (mes) {
+        const blocId = 'cronologia-any-' + mes.replace('-', '');
+        return `<section class="cronologia-any-bloc"><h5>${escHtml_(formatMesAnyCronologia_(mes + '-01'))}</h5><div class="cronologia-llegenda">${document.getElementById('cronologia-llegenda').innerHTML}</div><div class="grafic-wrap cronologia-grafic-wrap cronologia-any-chart"><canvas id="${blocId}-canvas" height="${Math.max(120, perMes[mes].length * 34)}"></canvas><div class="cronologia-lupa" id="${blocId}-lupa" hidden aria-live="polite"><div class="cronologia-lupa-estat" id="${blocId}-estat"></div><div class="cronologia-lupa-hora" id="${blocId}-hora"></div><div class="cronologia-lupa-trams" id="${blocId}-trams"></div><div class="cronologia-lupa-extra" id="${blocId}-extra"></div></div></div><div class="kpi-row hidden" id="${blocId}-kpi"></div></section>`;
+      }).join('') || `<div class="empty-state">${t_('buit_dades')}</div>`;
+      mesosRender.forEach(function (mes) {
+        const blocId = 'cronologia-any-' + mes.replace('-', '');
+        const state = { chart: null, lupaTancamentTimeout: null };
+        cronologiaStateAnual_.set(blocId, state);
+        renderCronologiaBloc_(perMes[mes], state, {
+          canvas: document.getElementById(blocId + '-canvas'),
+          lupa: document.getElementById(blocId + '-lupa'),
+          lupaEstat: document.getElementById(blocId + '-estat'),
+          lupaHora: document.getElementById(blocId + '-hora'),
+          lupaTrams: document.getElementById(blocId + '-trams'),
+          lupaExtra: document.getElementById(blocId + '-extra'),
+          kpi: document.getElementById(blocId + '-kpi')
         });
       });
     }
