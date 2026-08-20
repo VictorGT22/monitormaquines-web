@@ -62,6 +62,18 @@ const IMPL = {
     return apiFetch_('/maquines' + qs_(filtres), { token });
   },
 
+  async getMaquinesBase(token, filtres) {
+    return apiFetch_('/maquines-base' + qs_(filtres), { token });
+  },
+
+  async getMaquinesEstat(token, filtres) {
+    return apiFetch_('/maquines-estat' + qs_(filtres), { token });
+  },
+
+  async getMaquinesProduccioAvui(token, filtres) {
+    return apiFetch_('/maquines-produccio-avui' + qs_(filtres), { token });
+  },
+
   async getFiltresAdmin(token) {
     return apiFetch_('/filtres-admin', { token });
   },

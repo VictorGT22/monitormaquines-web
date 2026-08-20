@@ -455,8 +455,12 @@
     let carregaMaquinesEnCurs_ = false;
     let recarregaMaquinesPendent_ = false;
     let recarregaMaquinesSilenciosa_ = true;
-    let ultimRefrescEstats_ = 0;
-    const REFRESC_ESTATS_MS_ = 2000;
+    let ultimRefrescMaquinesBase_ = 0;
+    let ultimRefrescMaquinesEstat_ = 0;
+    let ultimRefrescMaquinesProduccio_ = 0;
+    const REFRESC_MAQUINES_BASE_MS_ = 120000;
+    const REFRESC_MAQUINES_ESTAT_MS_ = 5000;
+    const REFRESC_MAQUINES_PRODUCCIO_MS_ = 15000;
 
     const DICC = {
       ca: {
@@ -743,6 +747,9 @@
       aplicarIdioma_();
       if (esAdmin_) carregarFiltresAdmin_();
       carregarMaquines();
+      ultimRefrescMaquinesBase_ = Date.now();
+      ultimRefrescMaquinesEstat_ = Date.now();
+      ultimRefrescMaquinesProduccio_ = Date.now();
       iniciarPollVersio_();
       iniciarPresencia_();
       if (esAdmin_) precarregarPestanyesAdmin_();
@@ -778,7 +785,15 @@
       document.getElementById('dispositius-view').classList.toggle('hidden', vista !== 'dispositius');
       // silenciós=true: si ja hi ha dades en cache d'una visita anterior es
       // pinten a l'instant i la crida real només les substitueix si han canviat.
-      if (vista === 'maquines') carregarMaquines(true);
+      if (vista === 'maquines') {
+        if (maquinesCache_) {
+          pintarMaquines(filtrarMaquinesText_(maquinesCache_));
+          carregarMaquinesEstat(true);
+          carregarMaquinesProduccioAvui(true);
+        } else {
+          carregarMaquines(true);
+        }
+      }
       if (vista === 'projectes') carregarProjectesErp(true);
       if (vista === 'clients') carregarClientsFacturacio_(true);
       if (vista === 'dispositius') {
@@ -799,16 +814,26 @@
           .withSuccessHandler(function (v) {
             const ara = Date.now();
             const versioCanviada = versioClient_ !== null && v !== versioClient_;
-            // Encara que no entri cap escriptura, cal tornar a consultar els
-            // heartbeats perquè una màquina passi a "incomunicada" per temps.
+            const tocaRefrescarBaseMaquines = vistaActual_ === 'maquines' &&
+              ara - ultimRefrescMaquinesBase_ >= REFRESC_MAQUINES_BASE_MS_;
             const tocaRecalcularEstats = vistaActual_ === 'maquines' &&
-              ara - ultimRefrescEstats_ >= REFRESC_ESTATS_MS_;
+              ara - ultimRefrescMaquinesEstat_ >= REFRESC_MAQUINES_ESTAT_MS_;
+            const tocaRefrescarProduccio = vistaActual_ === 'maquines' &&
+              ara - ultimRefrescMaquinesProduccio_ >= REFRESC_MAQUINES_PRODUCCIO_MS_;
             const tocaRefrescarDispositius = vistaActual_ === 'dispositius' &&
               ara - ultimRefrescDispositius_ >= 10000;
-            if (versioCanviada || tocaRecalcularEstats || tocaRefrescarDispositius) {
-              ultimRefrescEstats_ = ara;
+            if (tocaRefrescarBaseMaquines) ultimRefrescMaquinesBase_ = ara;
+            if (tocaRecalcularEstats) ultimRefrescMaquinesEstat_ = ara;
+            if (tocaRefrescarProduccio) ultimRefrescMaquinesProduccio_ = ara;
+            if (versioCanviada || tocaRefrescarBaseMaquines || tocaRecalcularEstats || tocaRefrescarProduccio || tocaRefrescarDispositius) {
               if (tocaRefrescarDispositius) ultimRefrescDispositius_ = ara;
-              refrescarVistaActual_();
+              if (vistaActual_ === 'maquines') {
+                if (tocaRefrescarBaseMaquines) carregarMaquinesBase(true);
+                if (tocaRecalcularEstats) carregarMaquinesEstat(true);
+                if (tocaRefrescarProduccio) carregarMaquinesProduccioAvui(true);
+              } else {
+                refrescarVistaActual_();
+              }
             }
             versioClient_ = v;
           })
@@ -1443,6 +1468,38 @@
           errorSessio_(err);
         })
         .getMaquines(token, {});
+    }
+
+    function actualitzarBlocMaquines_(bloc, campTemps) {
+      if (!maquinesCache_) return;
+      const perId = new Map(maquinesCache_.map(m => [m.machineId, { ...m }]));
+      (Array.isArray(bloc) ? bloc : []).forEach(m => {
+        perId.set(m.machineId, { ...(perId.get(m.machineId) || { machineId: m.machineId }), ...m });
+      });
+      maquinesCache_ = Array.from(perId.values());
+      if (campTemps) window[campTemps] = Date.now();
+      pintarMaquines(filtrarMaquinesText_(maquinesCache_));
+    }
+
+    function carregarMaquinesBase(silenciós) {
+      if (!silenciós || !maquinesCache_) return carregarMaquines(silenciós);
+      IMPL.getMaquinesBase(token, {})
+        .then(function (base) { actualitzarBlocMaquines_(base, 'ultimRefrescMaquinesBase_'); })
+        .catch(errorSessio_);
+    }
+
+    function carregarMaquinesEstat(silenciós) {
+      if (!silenciós || !maquinesCache_) return carregarMaquines(silenciós);
+      IMPL.getMaquinesEstat(token, {})
+        .then(function (estat) { actualitzarBlocMaquines_(estat, 'ultimRefrescMaquinesEstat_'); })
+        .catch(errorSessio_);
+    }
+
+    function carregarMaquinesProduccioAvui(silenciós) {
+      if (!silenciós || !maquinesCache_) return carregarMaquines(silenciós);
+      IMPL.getMaquinesProduccioAvui(token, {})
+        .then(function (produccio) { actualitzarBlocMaquines_(produccio, 'ultimRefrescMaquinesProduccio_'); })
+        .catch(errorSessio_);
     }
 
     function mostrarAlertaCaigudaMultiple_(maquines) {
