@@ -2138,19 +2138,27 @@
       });
     }
 
-    function prepararDiesCronologia_(dies) {
+    function filtrarSegmentsPerReferencia_(segments, referencia) {
+      if (!referencia) return segments || [];
+      return (segments || []).filter(function (segment) {
+        return Array.isArray(segment.referencies) && segment.referencies.indexOf(referencia) !== -1;
+      });
+    }
+
+    function prepararDiesCronologia_(dies, referencia) {
       return (dies || []).map(function (dia) {
+        const segmentsReferencia = filtrarSegmentsPerReferencia_(dia.segments || [], referencia);
         return Object.assign({}, dia, {
-          segments: retallarSegmentsPerTorns_(dia.segments || [], dia.dia)
+          segments: retallarSegmentsPerTorns_(segmentsReferencia, dia.dia)
         });
       }).filter(function (dia) {
         return (dia.segments || []).length > 0;
       });
     }
 
-    function renderCronologiaBloc_(dies, state, elements) {
+    function renderCronologiaBloc_(dies, state, elements, referencia) {
       acabarCarregaCronologia_(state);
-      dies = prepararDiesCronologia_(dies);
+      dies = prepararDiesCronologia_(dies, referencia);
       elements.kpi.innerHTML = kpisCronologiaHtml_(dies);
       const dataset = [];
       dies.forEach(function (dia) {
@@ -2285,7 +2293,7 @@
           .withSuccessHandler(function (resposta) {
             if (peticioId !== cronologiaPeticioId_ || maquinaId !== maquinaActual) return;
             const dia = JSON.parse(resposta);
-            renderCronologiaBloc_([{ dia: dia.data, etiqueta: formatarData_(dia.data), segments: dia.segments || [] }], cronologiaStatePrincipal_, obtenirElementsCronologiaPrincipals_());
+            renderCronologiaBloc_([{ dia: dia.data, etiqueta: formatarData_(dia.data), segments: dia.segments || [] }], cronologiaStatePrincipal_, obtenirElementsCronologiaPrincipals_(), referencia);
           })
           .withFailureHandler(function (err) {
             if (peticioId !== cronologiaPeticioId_ || maquinaId !== maquinaActual) return;
@@ -2305,7 +2313,7 @@
           }) : [];
           dies = referencia ? diesAmbReferencia_(dies, referencia) : dies.filter(function (dia) { return (dia.segments || []).length > 0; });
           dies = dies.slice(-30);
-          renderCronologiaBloc_(dies, cronologiaStatePrincipal_, obtenirElementsCronologiaPrincipals_());
+          renderCronologiaBloc_(dies, cronologiaStatePrincipal_, obtenirElementsCronologiaPrincipals_(), referencia);
         })
         .withFailureHandler(function (err) {
           if (peticioId !== cronologiaPeticioId_ || maquinaId !== maquinaActual) return;
