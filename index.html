@@ -182,11 +182,11 @@
 
           <nav class="fitxa-subnav" id="fitxa-subnav">
             <a href="#panell-produccio" data-target="panell-produccio" id="subnav-produccio">Producció</a>
+            <a href="#panell-cronologia" data-target="panell-cronologia" id="subnav-cronologia">Cronologia</a>
             <a href="#panell-parades" data-target="panell-parades" id="subnav-parades">Paradas</a>
             <a href="#panell-actives" data-target="panell-actives" id="subnav-actives">Incidències actives</a>
             <a href="#panell-historic" data-target="panell-historic" id="subnav-historic">Històric</a>
             <a href="#panell-consums" data-target="panell-consums" id="subnav-consums">Consums</a>
-            <a href="#panell-cronologia" data-target="panell-cronologia" id="subnav-cronologia">Cronologia</a>
           </nav>
         </div>
 
@@ -269,6 +269,23 @@
           </div>
         </div>
 
+        <div class="panell" id="panell-cronologia">
+          <h3 id="titol-cronologia">Cronologia</h3>
+          <div class="filtres-historic">
+            <div>
+              <label id="lbl-cronologia-dia1">Dia 1</label>
+              <input type="text" class="date-input" id="filtre-cronologia-dia1" readonly placeholder="dd/mm/aaaa">
+            </div>
+            <div>
+              <label id="lbl-cronologia-dia2">Dia 2 (comparar)</label>
+              <input type="text" class="date-input" id="filtre-cronologia-dia2" readonly placeholder="dd/mm/aaaa">
+            </div>
+          </div>
+          <div class="cronologia-llegenda" id="cronologia-llegenda"></div>
+          <div class="grafic-wrap"><canvas id="grafic-cronologia" height="130"></canvas></div>
+          <div class="kpi-row" id="kpi-row-cronologia"></div>
+        </div>
+
         <div class="panell" id="panell-parades">
           <h3 id="titol-parades">Paradas del període</h3>
           <div class="taula-scroll">
@@ -348,23 +365,6 @@
           </div>
           <div class="kpi-row" id="kpi-row-consum-mitjana"></div>
           <div class="grafic-wrap"><canvas id="grafic-consums" height="90"></canvas></div>
-        </div>
-
-        <div class="panell" id="panell-cronologia">
-          <h3 id="titol-cronologia">Cronologia</h3>
-          <div class="filtres-historic">
-            <div>
-              <label id="lbl-cronologia-dia1">Dia 1</label>
-              <input type="text" class="date-input" id="filtre-cronologia-dia1" readonly placeholder="dd/mm/aaaa">
-            </div>
-            <div>
-              <label id="lbl-cronologia-dia2">Dia 2 (comparar)</label>
-              <input type="text" class="date-input" id="filtre-cronologia-dia2" readonly placeholder="dd/mm/aaaa">
-            </div>
-          </div>
-          <div class="cronologia-llegenda" id="cronologia-llegenda"></div>
-          <div class="grafic-wrap"><canvas id="grafic-cronologia" height="130"></canvas></div>
-          <div class="kpi-row" id="kpi-row-cronologia"></div>
         </div>
         </div>
       </div>
