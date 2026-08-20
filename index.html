@@ -1479,6 +1479,14 @@
 
     function pintarMaquines(maquines) {
       const grid = document.getElementById('maquines-grid');
+      if (!Array.isArray(maquines)) {
+        grid.innerHTML = `<div class="empty-state error-msg">Resposta de màquines invàlida</div>`;
+        return;
+      }
+      if (!maquines.length) {
+        grid.innerHTML = `<div class="empty-state">${t_('buit_dades')}</div>`;
+        return;
+      }
       // Nomes anima l'entrada de les targetes la primera vegada que es
       // pinten — als repintats posteriors (canvi de pestanya, poll
       // silenciós) l'animació tornava a saltar cada cop i feia l'efecte
@@ -1488,44 +1496,56 @@
       grid.classList.toggle('ja-animat', maquinesJaAnimat_);
       maquinesJaAnimat_ = true;
       grid.innerHTML = '';
-      maquines.forEach(m => {
-        const incomunicada = m.estatActual === 'incomunicada';
-        const desactivada = m.estatActual === 'desactivada';
-        const card = document.createElement('div');
-        card.className = 'maquina-card' + (incomunicada ? ' incomunicada' : '') + (desactivada ? ' desactivada' : '');
-        if (!incomunicada && !desactivada) {
-          card.onclick = () => obrirFitxa(m.machineId);
-          card.tabIndex = 0;
-          card.setAttribute('role', 'button');
-          card.setAttribute('aria-label', m.nom);
-          card.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); obrirFitxa(m.machineId); } };
-        }
-        card.innerHTML = `
-          <div class="img-placeholder">
-            ${m.imatgeUrl ? `<img src="${m.imatgeUrl}" alt="${escHtml_(m.nom)}">` : t_('senseImatge')}
-            <div class="img-badge">${badgeHtml_(m.estatActual)}</div>
-            ${!incomunicada && !desactivada ? `
-              <div class="img-produccio-avui">
-                <span class="torn-punt" style="background:${COLORS_TORN_[m.tornActual] || 'var(--text-muted)'}"></span>
-                ${formatarNumero_(m.pecesBonesAvui)} ${t_('kpi_peces').toLowerCase()}
-              </div>` : ''}
-          </div>
-          <div class="maquina-info">
-            <div class="maquina-top">
-              ${m.clientNom ? `<div class="client-tag">${m.clientNom}</div>` : ''}
-              <span class="nom">${m.nom}</span>
-              ${m.visiblePelClient === false ? `<span class="chip-postamarxa">${t_('chip_postamarxa')}</span>` : ''}
+      try {
+        maquines.forEach(m => {
+          const incomunicada = m.estatActual === 'incomunicada';
+          const desactivada = m.estatActual === 'desactivada';
+          const card = document.createElement('div');
+          card.className = 'maquina-card' + (incomunicada ? ' incomunicada' : '') + (desactivada ? ' desactivada' : '');
+          if (!incomunicada && !desactivada) {
+            card.onclick = () => obrirFitxa(m.machineId);
+            card.tabIndex = 0;
+            card.setAttribute('role', 'button');
+            card.setAttribute('aria-label', m.nom);
+            card.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); obrirFitxa(m.machineId); } };
+          }
+          card.innerHTML = `
+            <div class="img-placeholder">
+              ${m.imatgeUrl ? `<img src="${m.imatgeUrl}" alt="${escHtml_(m.nom)}">` : t_('senseImatge')}
+              <div class="img-badge">${badgeHtml_(m.estatActual)}</div>
+              ${!incomunicada && !desactivada ? `
+                <div class="img-produccio-avui">
+                  <span class="torn-punt" style="background:${COLORS_TORN_[m.tornActual] || 'var(--text-muted)'}"></span>
+                  ${formatarNumero_(m.pecesBonesAvui)} ${t_('kpi_peces').toLowerCase()}
+                </div>` : ''}
             </div>
-            <div class="barres-dades">
-              ${barraHtml_(t_('barra_produccio'), 'fill-produccio', m.horesProduccio)}
-              ${barraHtml_(t_('barra_alarma'), 'fill-alarma', m.horesAlarma)}
-              ${barraHtml_(t_('barra_parada'), 'fill-parada', m.horesParada)}
+            <div class="maquina-info">
+              <div class="maquina-top">
+                ${m.clientNom ? `<div class="client-tag">${m.clientNom}</div>` : ''}
+                <span class="nom">${m.nom}</span>
+                ${m.visiblePelClient === false ? `<span class="chip-postamarxa">${t_('chip_postamarxa')}</span>` : ''}
+              </div>
+              <div class="barres-dades">
+                ${barraHtml_(t_('barra_produccio'), 'fill-produccio', m.horesProduccio)}
+                ${barraHtml_(t_('barra_alarma'), 'fill-alarma', m.horesAlarma)}
+                ${barraHtml_(t_('barra_parada'), 'fill-parada', m.horesParada)}
+              </div>
+            </div>`;
+          grid.appendChild(card);
+        });
+      } catch (e) {
+        console.error('Error pintant màquines:', e);
+        grid.innerHTML = maquines.map(m => `
+          <div class="maquina-card">
+            <div class="maquina-info">
+              <div class="maquina-top">
+                <span class="nom">${escHtml_(m.nom || m.machineId || 'Màquina')}</span>
+              </div>
+              <div class="barres-dades">
+                <div class="barra-row"><span class="barra-label">Estat</span><span class="barra-valor">${escHtml_(m.estatActual || '—')}</span></div>
+              </div>
             </div>
-          </div>`;
-        grid.appendChild(card);
-      });
-      if (!maquines.length) {
-        grid.innerHTML = `<div class="empty-state">${t_('buit_dades')}</div>`;
+          </div>`).join('');
       }
     }
 
