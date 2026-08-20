@@ -2229,9 +2229,9 @@
         [t_('dispositius_actius'), totalSessions]
       ].map(kpi => `<div class="kpi"><div class="valor">${kpi[1]}</div><div class="etiqueta">${kpi[0]}</div></div>`).join('');
       document.getElementById('sessions-usuaris-taula').innerHTML = sessionsUsuaris.map(function (u) {
-        const detall = (u.dispositius || []).map(function (d) {
+        const detall = `<div class="sessions-dispositius">` + (u.dispositius || []).map(function (d) {
           return `<span class="cronologia-chip"><i style="background:#34d17a"></i>${escHtml_(d.nom || d.plataforma || '')}</span>`;
-        }).join(' ');
+        }).join('') + `</div>`;
         return `<tr>
           <td>${escHtml_(u.email)}</td>
           <td>${escHtml_(u.clientNom || '')}</td>
