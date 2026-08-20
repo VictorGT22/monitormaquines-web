@@ -1841,7 +1841,7 @@
     }
 
     const COLORS_ESTAT_ = { marxa: '#34d17a', alarma: '#ef4444', parada: '#f5a623', incomunicada: '#8a95a5' };
-    const cronologiaStatePrincipal_ = { chart: null, lupaTancamentTimeout: null };
+    const cronologiaStatePrincipal_ = { chart: null, lupaTancamentTimeout: null, carregant: false };
     let cronologiaPeticioId_ = 0;
 
     function pintarLlegendaCronologia_() {
@@ -2061,6 +2061,8 @@
 
     function pintarEstatCronologia_(missatge, esError) {
       const elements = obtenirElementsCronologiaPrincipals_();
+      cronologiaStatePrincipal_.carregant = false;
+      document.getElementById('panell-cronologia').classList.remove('cronologia-carregant');
       elements.canvas.style.display = 'none';
       const cont = elements.kpi;
       cont.innerHTML = '';
@@ -2074,6 +2076,19 @@
       const elements = obtenirElementsCronologiaPrincipals_();
       elements.canvas.style.display = 'none';
       elements.kpi.innerHTML = skeletonCronologiaHtml_(2);
+    }
+
+    function iniciarCarregaCronologia_(state) {
+      state.carregant = true;
+      document.getElementById('panell-cronologia').classList.add('cronologia-carregant');
+      if (!state.chart || !state.chart.data || !state.chart.data.datasets || !state.chart.data.datasets.length) {
+        pintarSkeletonCronologiaPrincipal_();
+      }
+    }
+
+    function acabarCarregaCronologia_(state) {
+      state.carregant = false;
+      document.getElementById('panell-cronologia').classList.remove('cronologia-carregant');
     }
 
     function kpisCronologiaHtml_(dies) {
@@ -2134,6 +2149,7 @@
     }
 
     function renderCronologiaBloc_(dies, state, elements) {
+      acabarCarregaCronologia_(state);
       dies = prepararDiesCronologia_(dies);
       elements.kpi.innerHTML = kpisCronologiaHtml_(dies);
       const dataset = [];
@@ -2262,7 +2278,7 @@
       const maquinaId = maquinaActual;
       const referencia = document.getElementById('filtre-referencia').value || null;
       const resum = resumIntervalCronologia_();
-      pintarSkeletonCronologiaPrincipal_();
+      iniciarCarregaCronologia_(cronologiaStatePrincipal_);
 
       if (resum.mode === 'avui') {
         google.script.run
