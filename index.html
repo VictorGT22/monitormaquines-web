@@ -186,6 +186,7 @@
             <a href="#panell-actives" data-target="panell-actives" id="subnav-actives">Incidències actives</a>
             <a href="#panell-historic" data-target="panell-historic" id="subnav-historic">Històric</a>
             <a href="#panell-consums" data-target="panell-consums" id="subnav-consums">Consums</a>
+            <a href="#panell-cronologia" data-target="panell-cronologia" id="subnav-cronologia">Cronologia</a>
           </nav>
         </div>
 
@@ -348,6 +349,23 @@
           <div class="kpi-row" id="kpi-row-consum-mitjana"></div>
           <div class="grafic-wrap"><canvas id="grafic-consums" height="90"></canvas></div>
         </div>
+
+        <div class="panell" id="panell-cronologia">
+          <h3 id="titol-cronologia">Cronologia</h3>
+          <div class="filtres-historic">
+            <div>
+              <label id="lbl-cronologia-dia1">Dia 1</label>
+              <input type="text" class="date-input" id="filtre-cronologia-dia1" readonly placeholder="dd/mm/aaaa">
+            </div>
+            <div>
+              <label id="lbl-cronologia-dia2">Dia 2 (comparar)</label>
+              <input type="text" class="date-input" id="filtre-cronologia-dia2" readonly placeholder="dd/mm/aaaa">
+            </div>
+          </div>
+          <div class="cronologia-llegenda" id="cronologia-llegenda"></div>
+          <div class="grafic-wrap"><canvas id="grafic-cronologia" height="130"></canvas></div>
+          <div class="kpi-row" id="kpi-row-cronologia"></div>
+        </div>
         </div>
       </div>
     </main>
@@ -380,6 +398,8 @@
     let produccioActual_ = null;
     let versioClient_ = null;
     let pollIntervalId_ = null;
+    let ultimRefrescEstats_ = 0;
+    const REFRESC_ESTATS_MS_ = 2000;
 
     const DICC = {
       ca: {
@@ -400,6 +420,8 @@
         consums_titol: 'Consums', consum_aire: 'Consum aire', consum_electric: 'Consum elèctric',
         preu_aire: '€/unitat aire', preu_electric: '€/unitat elèctric',
         mitjana_peca: 'per peça', unitat_aire: 'unitat', unitat_electric: 'kWh',
+        cronologia_titol: 'Cronologia', cronologia_dia1: 'Dia 1', cronologia_dia2: 'Dia 2 (comparar)',
+        cronologia_producint: 'Producint', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada',
         taula_codi: 'Codi', taula_missatge: 'Missatge',
         buit_dades: 'Sense dades', buit_paradas: 'Sense paradas en aquest període', buit_incidencies: "Sense incidències en aquest període",
         admin_client: 'Client', admin_totsClients: 'Tots els clients', admin_cercar: 'Cercar per nom...', admin_cercarLbl: 'Cercar',
@@ -425,6 +447,8 @@
         consums_titol: 'Consumos', consum_aire: 'Consumo aire', consum_electric: 'Consumo eléctrico',
         preu_aire: '€/unidad aire', preu_electric: '€/unidad eléctrico',
         mitjana_peca: 'por pieza', unitat_aire: 'unidad', unitat_electric: 'kWh',
+        cronologia_titol: 'Cronología', cronologia_dia1: 'Día 1', cronologia_dia2: 'Día 2 (comparar)',
+        cronologia_producint: 'Produciendo', cronologia_alarma: 'Alarma', cronologia_parada: 'Parada',
         taula_codi: 'Código', taula_missatge: 'Mensaje',
         buit_dades: 'Sin datos', buit_paradas: 'Sin paradas en este período', buit_incidencies: 'Sin incidencias en este período',
         admin_client: 'Cliente', admin_totsClients: 'Todos los clientes', admin_cercar: 'Buscar por nombre...', admin_cercarLbl: 'Buscar',
@@ -450,6 +474,8 @@
         consums_titol: 'Consumption', consum_aire: 'Air consumption', consum_electric: 'Electric consumption',
         preu_aire: '€/unit air', preu_electric: '€/unit electric',
         mitjana_peca: 'per piece', unitat_aire: 'unit', unitat_electric: 'kWh',
+        cronologia_titol: 'Timeline', cronologia_dia1: 'Day 1', cronologia_dia2: 'Day 2 (compare)',
+        cronologia_producint: 'Producing', cronologia_alarma: 'Alarm', cronologia_parada: 'Stopped',
         taula_codi: 'Code', taula_missatge: 'Message',
         buit_dades: 'No data', buit_paradas: 'No stops in this period', buit_incidencies: 'No alerts in this period',
         admin_client: 'Client', admin_totsClients: 'All clients', admin_cercar: 'Search by name...', admin_cercarLbl: 'Search',
@@ -478,6 +504,11 @@
       document.getElementById('lbl-fins-c').textContent = t_('f_finsA');
       document.getElementById('lbl-preu-aire').textContent = t_('preu_aire');
       document.getElementById('lbl-preu-electric').textContent = t_('preu_electric');
+      document.getElementById('subnav-cronologia').textContent = t_('cronologia_titol');
+      document.getElementById('titol-cronologia').textContent = t_('cronologia_titol');
+      document.getElementById('lbl-cronologia-dia1').textContent = t_('cronologia_dia1');
+      document.getElementById('lbl-cronologia-dia2').textContent = t_('cronologia_dia2');
+      pintarLlegendaCronologia_();
       document.getElementById('lbl-any').textContent = t_('f_any');
       document.getElementById('lbl-mes').textContent = t_('f_mes');
       document.getElementById('lbl-referencia').textContent = t_('f_referencia');
@@ -651,7 +682,16 @@
         if (!token) return;
         google.script.run
           .withSuccessHandler(function (v) {
-            if (versioClient_ !== null && v > versioClient_) refrescarVistaActual_();
+            const ara = Date.now();
+            const versioCanviada = versioClient_ !== null && v !== versioClient_;
+            // Encara que no entri cap escriptura, cal tornar a consultar els
+            // heartbeats perquè una màquina passi a "incomunicada" per temps.
+            const tocaRecalcularEstats = vistaActual_ === 'maquines' &&
+              ara - ultimRefrescEstats_ >= REFRESC_ESTATS_MS_;
+            if (versioCanviada || tocaRecalcularEstats) {
+              ultimRefrescEstats_ = ara;
+              refrescarVistaActual_();
+            }
             versioClient_ = v;
           })
           .withFailureHandler(function () {})
@@ -1381,6 +1421,9 @@
       if (cache) { pintarFitxa(cache.fitxa); pintarProduccio(cache.produccio); }
       carregarDetallMaquina(machineId);
       carregarConsums_();
+      document.getElementById('filtre-cronologia-dia1').value = '';
+      document.getElementById('filtre-cronologia-dia2').value = '';
+      carregarCronologia_();
       desarVistaActual_();
     }
 
@@ -1684,6 +1727,115 @@
           }
         }
       });
+    }
+
+    const COLORS_ESTAT_ = { marxa: '#34d17a', alarma: '#ef4444', parada: '#f5a623' };
+    let graficCronologia_ = null;
+
+    function pintarLlegendaCronologia_() {
+      const cont = document.getElementById('cronologia-llegenda');
+      if (!cont) return;
+      const claus = ['marxa', 'alarma', 'parada'];
+      const etiquetes = { marxa: t_('cronologia_producint'), alarma: t_('cronologia_alarma'), parada: t_('cronologia_parada') };
+      cont.innerHTML = claus.map(c =>
+        `<span class="cronologia-chip"><i style="background:${COLORS_ESTAT_[c]}"></i>${etiquetes[c]}</span>`
+      ).join('');
+    }
+
+    function formatMinutsHora_(min) {
+      const h = Math.floor(min / 60);
+      const m = Math.round(min % 60);
+      return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+    }
+
+    function carregarCronologia_() {
+      const dia1 = document.getElementById('filtre-cronologia-dia1').value || formatIso_(new Date());
+      if (!document.getElementById('filtre-cronologia-dia1').value) document.getElementById('filtre-cronologia-dia1').value = dia1;
+      const dia2 = document.getElementById('filtre-cronologia-dia2').value || null;
+      const peticions = [
+        { dia: dia1, etiqueta: t_('cronologia_dia1') + ' — ' + formatarData_(dia1) }
+      ];
+      if (dia2) peticions.push({ dia: dia2, etiqueta: t_('cronologia_dia2').replace(/ \(.*\)/, '') + ' — ' + formatarData_(dia2) });
+
+      Promise.all(peticions.map(p => new Promise((resolve) => {
+        google.script.run
+          .withSuccessHandler(function (resposta) { resolve(Object.assign({}, p, JSON.parse(resposta))); })
+          .withFailureHandler(function (err) { errorSessio_(err); resolve(Object.assign({}, p, { segments: [] })); })
+          .getCronologia(token, maquinaActual, p.dia);
+      }))).then(renderCronologia_);
+    }
+
+    function renderCronologia_(dies) {
+      pintarKpiCronologia_(dies);
+      const ctx = document.getElementById('grafic-cronologia');
+      const dataset = [];
+      dies.forEach(function (dia) {
+        const midnight = new Date(dia.dia + 'T00:00:00.000Z').getTime();
+        (dia.segments || []).forEach(function (s) {
+          const minInici = (new Date(s.inici).getTime() - midnight) / 60000;
+          const minFi = (new Date(s.fi).getTime() - midnight) / 60000;
+          dataset.push({ x: [minInici, minFi], y: dia.etiqueta, estat: s.estat });
+        });
+      });
+      const labels = dies.map(d => d.etiqueta);
+
+      const config = {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: dataset,
+            backgroundColor: function (c) { return c.raw ? COLORS_ESTAT_[c.raw.estat] : '#4da3ff'; },
+            borderRadius: 3,
+            barThickness: 28
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function (c) {
+                  const etiquetaEstat = c.raw.estat === 'marxa' ? t_('cronologia_producint') : (c.raw.estat === 'alarma' ? t_('cronologia_alarma') : t_('cronologia_parada'));
+                  return etiquetaEstat + ': ' + formatMinutsHora_(c.raw.x[0]) + ' – ' + formatMinutsHora_(c.raw.x[1]);
+                }
+              }
+            }
+          },
+          scales: {
+            x: { min: 0, max: 1440, ticks: { color: '#8a95a5', stepSize: 120, callback: formatMinutsHora_ }, grid: { color: '#2c343f' } },
+            y: { ticks: { color: '#8a95a5' }, grid: { display: false } }
+          }
+        }
+      };
+
+      if (graficCronologia_) {
+        graficCronologia_.data.labels = labels;
+        graficCronologia_.data.datasets = config.data.datasets;
+        graficCronologia_.update();
+        return;
+      }
+      if (typeof Chart === 'undefined') return;
+      graficCronologia_ = new Chart(ctx, config);
+    }
+
+    function pintarKpiCronologia_(dies) {
+      const cont = document.getElementById('kpi-row-cronologia');
+      cont.innerHTML = dies.map(function (dia) {
+        const totals = { marxa: 0, alarma: 0, parada: 0 };
+        (dia.segments || []).forEach(function (s) {
+          if (totals[s.estat] === undefined) return;
+          totals[s.estat] += (new Date(s.fi) - new Date(s.inici)) / 3600000;
+        });
+        const parts = [
+          `${t_('cronologia_producint')}: ${totals.marxa.toFixed(1)}h`,
+          `${t_('cronologia_alarma')}: ${totals.alarma.toFixed(1)}h`,
+          `${t_('cronologia_parada')}: ${totals.parada.toFixed(1)}h`
+        ];
+        return `<div class="kpi"><div class="valor" style="font-size:13px">${parts.join(' · ')}</div><div class="etiqueta">${dia.etiqueta}</div></div>`;
+      }).join('') || `<div class="empty-state">${t_('buit_dades')}</div>`;
     }
 
     function pintarProduccio(p) {
@@ -2153,6 +2305,10 @@
     document.getElementById('filtre-fins-c').addEventListener('click', function () { obrirDatePicker_(this); });
     document.getElementById('input-preu-aire').addEventListener('change', guardarPreusConsum_);
     document.getElementById('input-preu-electric').addEventListener('change', guardarPreusConsum_);
+    document.getElementById('filtre-cronologia-dia1').addEventListener('click', function () { obrirDatePicker_(this); });
+    document.getElementById('filtre-cronologia-dia2').addEventListener('click', function () { obrirDatePicker_(this); });
+    document.getElementById('filtre-cronologia-dia1').addEventListener('change', carregarCronologia_);
+    document.getElementById('filtre-cronologia-dia2').addEventListener('change', carregarCronologia_);
     document.getElementById('filtre-desde-c').addEventListener('change', carregarConsums_);
     document.getElementById('filtre-fins-c').addEventListener('change', carregarConsums_);
 
