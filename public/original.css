@@ -666,8 +666,8 @@
   .cronologia-lupa-trams { position: relative; height: 44px; margin: 16px 0 12px; background: var(--surface-2); border-radius: 7px; overflow: hidden; }
   .cronologia-lupa-tram { position: absolute; top: 0; bottom: 0; min-width: 5px; border: 0; border-radius: 0; padding: 0; margin: 0; appearance: none; }
   .cronologia-lupa-tram.actiu { z-index: 2; box-shadow: inset 0 0 0 2px var(--text); }
-  button.cronologia-lupa-tram.accionable { cursor: pointer; }
-  button.cronologia-lupa-tram.accionable:focus-visible { z-index: 5; outline: 3px solid var(--text); outline-offset: -3px; }
+  .cronologia-lupa-tram.accionable { cursor: pointer; }
+  .cronologia-lupa-tram.accionable:focus-visible { z-index: 5; outline: 3px solid var(--text); outline-offset: -3px; }
   .cronologia-lupa-trams span.cronologia-lupa-cursor {
     z-index: 4; width: 2px; min-width: 2px; background: var(--text); transform: translateX(-50%);
     box-shadow: 0 0 0 1px rgba(0,0,0,.45); pointer-events: none; position: absolute; top: 0; bottom: 0;

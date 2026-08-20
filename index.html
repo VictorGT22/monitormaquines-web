@@ -1936,8 +1936,7 @@
       trams.innerHTML = '';
       dadesFila.filter(d => d.x[0] < fiVista && d.x[1] > iniciVista).forEach(d => {
         const accionable = d.estat === 'alarma' || d.estat === 'parada';
-        const barra = document.createElement(accionable ? 'button' : 'span');
-        if (accionable) barra.type = 'button';
+        const barra = document.createElement('span');
         barra.className = 'cronologia-lupa-tram' + (d === seleccionat ? ' actiu' : '') + (accionable ? ' accionable' : '');
         const esquerra = Math.max(0, (d.x[0] - iniciVista) / 40 * 100);
         const dreta = Math.min(100, (d.x[1] - iniciVista) / 40 * 100);
@@ -1945,9 +1944,13 @@
         barra.style.width = Math.max(2, dreta - esquerra) + '%';
         barra.style.background = COLORS_ESTAT_[d.estat];
         barra.setAttribute('aria-label', etiquetaEstatCronologia_(d.estat) + ' ' + formatMinutsHoraPrecisa_(d.x[0], true));
+        if (accionable) { barra.setAttribute('role', 'button'); barra.tabIndex = 0; }
         barra.addEventListener('mouseenter', function () { cancelLarTancamentLupa_(); actualitzarInfoLupa_(d); });
         barra.addEventListener('focus', function () { cancelLarTancamentLupa_(); actualitzarInfoLupa_(d); });
-        if (accionable) barra.addEventListener('click', function () { obrirDetallTramCronologia_(d); });
+        if (accionable) {
+          barra.addEventListener('click', function () { obrirDetallTramCronologia_(d); });
+          barra.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); obrirDetallTramCronologia_(d); } });
+        }
         trams.appendChild(barra);
       });
 
@@ -1962,7 +1965,7 @@
 
       const x = Math.max(132, Math.min(wrap.clientWidth - 132, canvas.offsetLeft + event.x));
       lupa.style.left = x + 'px';
-      lupa.style.top = '-16px';
+      lupa.style.top = (canvas.offsetTop + element.y - 26) + 'px';
       lupa.style.transform = 'translate(-50%, -100%)';
       lupa.hidden = false;
     }
@@ -2036,8 +2039,13 @@
             borderWidth: 0,
             hoverBorderWidth: 0,
             minBarLength: 5,
-            borderRadius: 3,
-            barThickness: 28
+            borderRadius: 0,
+            borderSkipped: false,
+            inflateAmount: 0,
+            barThickness: 28,
+            maxBarThickness: 28,
+            categoryPercentage: 1,
+            barPercentage: 1
           }]
         },
         options: {
