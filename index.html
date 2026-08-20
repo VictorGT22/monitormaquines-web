@@ -1860,7 +1860,7 @@
 
     function programarTancamentLupa_() {
       if (lupaTancamentTimeout_) return;
-      lupaTancamentTimeout_ = setTimeout(amagarLupaCronologia_, 3000);
+      lupaTancamentTimeout_ = setTimeout(amagarLupaCronologia_, 1500);
     }
 
     function actualitzarInfoLupa_(raw) {
@@ -2098,7 +2098,6 @@
       }
       if (typeof Chart === 'undefined') return;
       graficCronologia_ = new Chart(ctx, config);
-      ctx.onmouseenter = cancelLarTancamentLupa_;
       ctx.onmouseleave = programarTancamentLupa_;
       const lupa = document.getElementById('cronologia-lupa');
       lupa.onmouseenter = cancelLarTancamentLupa_;
