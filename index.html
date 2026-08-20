@@ -244,7 +244,23 @@
               <div class="kpi kpi-merma"><div class="valor" id="kpi-avui-merma">-</div><div class="etiqueta" id="lbl-kpi-avui-merma">Merma</div></div>
               <div class="kpi kpi-actiu-wrap"><div class="valor" id="kpi-avui-actiu">-</div><div class="etiqueta" id="lbl-kpi-avui-actiu">Temps actiu</div></div>
               <div class="kpi kpi-parat-wrap"><div class="valor" id="kpi-avui-parat">-</div><div class="etiqueta" id="lbl-kpi-avui-parat">Temps parat</div></div>
-              <div class="kpi kpi-oee-wrap"><div class="valor" id="kpi-avui-oee">-</div><div class="etiqueta" id="lbl-kpi-avui-oee">OEE</div></div>
+              <div class="kpi kpi-oee-wrap" tabindex="0">
+                <div class="kpi-oee-border"><span></span><span></span></div>
+                <div class="valor" id="kpi-avui-oee">-</div><div class="etiqueta" id="lbl-kpi-avui-oee">OEE</div>
+                <div class="oee-popover" id="oee-popover-avui">
+                  <svg viewBox="0 0 100 100" width="160" height="160">
+                    <circle class="oee-track" cx="50" cy="50" r="40" stroke-dasharray="188.5 62.83"></circle>
+                    <circle class="oee-arc oee-arc-disp" id="oee-avui-arc-disp" cx="50" cy="50" r="40"></circle>
+                    <circle class="oee-track" cx="50" cy="50" r="30" stroke-dasharray="141.37 47.12"></circle>
+                    <circle class="oee-arc oee-arc-qual" id="oee-avui-arc-qual" cx="50" cy="50" r="30"></circle>
+                    <text x="50" y="55" text-anchor="middle" class="oee-center" id="oee-avui-center-text">-</text>
+                  </svg>
+                  <div class="oee-legend">
+                    <div><i class="oee-dot disp"></i><span id="oee-avui-leg-lbl-disp">Disponibilitat</span><b id="oee-avui-leg-disp">-</b></div>
+                    <div><i class="oee-dot qual"></i><span id="oee-avui-leg-lbl-qual">Qualitat</span><b id="oee-avui-leg-qual">-</b></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <div id="bloc-periode-total" class="hidden">
@@ -582,6 +598,8 @@
       document.getElementById('lbl-kpi-avui-actiu').textContent = t_('kpi_actiu');
       document.getElementById('lbl-kpi-avui-parat').textContent = t_('kpi_parat');
       document.getElementById('lbl-kpi-avui-oee').textContent = t_('kpi_oee');
+      document.getElementById('oee-avui-leg-lbl-disp').textContent = t_('oee_disponibilitat');
+      document.getElementById('oee-avui-leg-lbl-qual').textContent = t_('oee_qualitat');
       document.getElementById('oee-leg-lbl-disp').textContent = t_('oee_disponibilitat');
       document.getElementById('oee-leg-lbl-qual').textContent = t_('oee_qualitat');
       document.getElementById('th-dia').textContent = t_('taula_dia');
@@ -2522,6 +2540,11 @@
         document.getElementById('kpi-avui-actiu').textContent = formatarHoresMin_(ra.tempsActiuMin) + ' (' + (ra.disponibilitat * 100).toFixed(0) + '%)';
         document.getElementById('kpi-avui-parat').textContent = formatarHoresMin_(ra.tempsParatMin);
         document.getElementById('kpi-avui-oee').textContent = (ra.oee * 100).toFixed(0) + '%';
+        document.getElementById('oee-avui-center-text').textContent = (ra.oee * 100).toFixed(0) + '%';
+        document.getElementById('oee-avui-leg-disp').textContent = (ra.disponibilitat * 100).toFixed(0) + '%';
+        document.getElementById('oee-avui-leg-qual').textContent = (ra.qualitat * 100).toFixed(0) + '%';
+        setArcOee_(document.getElementById('oee-avui-arc-disp'), 40, ra.disponibilitat);
+        setArcOee_(document.getElementById('oee-avui-arc-qual'), 30, ra.qualitat);
       }
 
       const r = p.resum;
