@@ -431,6 +431,11 @@
   .peces-avui-row .torn-punt { width: 6px; height: 6px; border-radius: 50%; flex: none; }
   .peces-avui-row svg { width: 14px; height: 14px; color: var(--text-muted); flex: none; }
   .peces-avui-row .peces-avui-valor { font-variant-numeric: tabular-nums; }
+  .peces-avui-row .peces-avui-valor.valor-flash { animation: valor-flash-anim .9s ease; border-radius: 4px; }
+  @keyframes valor-flash-anim {
+    0% { color: var(--verd); background: rgba(52,209,122,.28); }
+    100% { color: inherit; background: transparent; }
+  }
   .client-tag {
     font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: .06em;
     font-weight: 700; margin-bottom: 3px;
@@ -525,6 +530,8 @@
   .fitxa-scroll::-webkit-scrollbar { display: none; }
   #produccio-taula tr.fila-clicable, #historic-taula tr.fila-clicable { cursor: pointer; }
   #produccio-taula tr.fila-clicable:hover, #historic-taula tr.fila-clicable:hover { background: var(--surface-2); }
+  #parades-taula tr { cursor: pointer; }
+  #parades-taula tr:hover { background: var(--surface-2); }
   .torn-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
   .fitxa-sticky {
     flex: none;
@@ -709,6 +716,9 @@
 
   .incidencia-activa { color: var(--vermell); font-weight: 700; }
   tr.fila-activa { background: rgba(245,166,35,.08); }
+  /* Sincronització cronologia <-> taula: flaix breu quan es selecciona una
+     franja des del gràfic o una fila des de la taula. */
+  tr.fila-realçada { background: rgba(77,163,255,.22) !important; transition: background .3s ease; }
   .chip-en-curs {
     font-size: 10px; font-weight: 700; color: var(--ambre);
     background: rgba(245,166,35,.15); border: 1px solid rgba(245,166,35,.4);

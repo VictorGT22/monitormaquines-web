@@ -1613,6 +1613,11 @@
     const ICONA_REFERENCIA_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.5 12.6 20.4a2 2 0 0 1-2.8 0l-6.2-6.2a2 2 0 0 1 0-2.8L11.5 3.5H19a1.5 1.5 0 0 1 1.5 1.5v7.5z"/><circle cx="16" cy="8" r="1.2"/></svg>';
     const ICONA_PECES_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5z"/><path d="M3 7l9 5 9-5M12 22V12"/></svg>';
 
+    // Recorda l'últim valor de peces pintat per màquina perquè, quan un
+    // repintat de la graella porti un número diferent, la targeta ho pugui
+    // marcar amb un flaix breu en lloc de canviar en silenci.
+    let valorsPecesAnteriors_ = {};
+
     function badgeHtml_(estat) {
       const icona = estat === 'incomunicada' ? ICONA_WIFI_OFF : '';
       return `<span class="estat-badge estat-${estat}">${icona}${t_('estat_' + estat)}</span>`;
@@ -1673,10 +1678,11 @@
                 <div class="peces-avui-row">
                   <span class="torn-punt" style="background:${COLORS_TORN_[m.tornActual] || 'var(--text-muted)'}"></span>
                   ${ICONA_PECES_}
-                  <span class="peces-avui-valor">${formatarNumero_(m.pecesBonesAvui)}</span>
+                  <span class="peces-avui-valor${valorsPecesAnteriors_[m.machineId] !== undefined && valorsPecesAnteriors_[m.machineId] !== m.pecesBonesAvui ? ' valor-flash' : ''}">${formatarNumero_(m.pecesBonesAvui)}</span>
                 </div>` : ''}
             </div>`;
           grid.appendChild(card);
+          valorsPecesAnteriors_[m.machineId] = m.pecesBonesAvui;
         });
       } catch (e) {
         console.error('Error pintant màquines:', e);
@@ -2167,10 +2173,38 @@
       desti.scrollIntoView({ behavior: reduitMotion ? 'auto' : 'smooth', block: 'start' });
     }
 
+    function realçarFilaTaula_(selectorTaula, timestampInici) {
+      if (!timestampInici) return;
+      const fila = document.querySelector(selectorTaula + ' tr[data-timestamp-inici="' + timestampInici + '"]');
+      if (!fila) return;
+      fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      fila.classList.add('fila-realçada');
+      setTimeout(function () { fila.classList.remove('fila-realçada'); }, 2500);
+    }
+
+    function realçarSegmentCronologia_(timestampInici) {
+      const chart = cronologiaStatePrincipal_.chart;
+      if (!chart || !timestampInici) return;
+      const dades = chart.data.datasets[0].data;
+      const index = dades.findIndex(function (d) {
+        return (d.alarmes || []).some(a => a.timestampInici === timestampInici) ||
+          (d.parades || []).some(p => p.timestampInici === timestampInici);
+      });
+      if (index === -1) return;
+      mostrarTooltipGrafic_(chart, 'grafic-cronologia', index);
+    }
+
     function obrirDetallTramCronologia_(raw) {
       amagarLupaCronologia_(cronologiaStatePrincipal_, obtenirElementsCronologiaPrincipals_());
-      if (raw.estat === 'alarma') anarAHistoric_();
-      else if (raw.estat === 'parada') anarAParades_();
+      if (raw.estat === 'alarma') {
+        anarAHistoric_();
+        const primera = raw.alarmes && raw.alarmes[0];
+        if (primera) setTimeout(function () { realçarFilaTaula_('#historic-taula', primera.timestampInici); }, 450);
+      } else if (raw.estat === 'parada') {
+        anarAParades_();
+        const primera = raw.parades && raw.parades[0];
+        if (primera) setTimeout(function () { realçarFilaTaula_('#parades-taula', primera.timestampInici); }, 450);
+      }
     }
 
     function clicarTramCronologia_(event, _, chart) {
@@ -2801,7 +2835,7 @@
 
       const taulaParades = document.getElementById('parades-taula');
       taulaParades.innerHTML = p.paradas.map(pa => `
-        <tr class="${pa.activa ? 'fila-activa' : ''}">
+        <tr class="${pa.activa ? 'fila-activa' : ''}" data-timestamp-inici="${pa.inici}">
           <td>${formatarDataHora_(pa.inici)}</td>
           <td>${pa.activa ? '<span class="chip-en-curs">En curs</span>' : formatarDataHora_(pa.fi)}</td>
           <td>${pa.activa ? '—' : formatarDurada_(pa.duradaMin, pa.duradaSeg)}</td>
@@ -3027,7 +3061,7 @@
 
       const historicTaula = document.getElementById('historic-taula');
       historicTaula.innerHTML = f.incidenciesHistoric.map(i => `
-        <tr data-dia="${i.timestampInici.slice(0, 10)}" class="fila-clicable">
+        <tr data-dia="${i.timestampInici.slice(0, 10)}" data-timestamp-inici="${i.timestampInici}" class="fila-clicable">
           <td>${i.codi}</td>
           <td>${i.missatge}</td>
           <td>${(i.torns && i.torns.length ? i.torns : [i.torn]).map(t =>
@@ -3102,6 +3136,13 @@
       if (!fila) return;
       const idx = historicDiesActuals_.findIndex(d => d.data.slice(0, 10) === fila.dataset.dia);
       mostrarTooltipHistoric_(idx);
+      realçarSegmentCronologia_(fila.dataset.timestampInici);
+    });
+
+    document.getElementById('parades-taula').addEventListener('click', function (e) {
+      const fila = e.target.closest('tr[data-timestamp-inici]');
+      if (!fila) return;
+      realçarSegmentCronologia_(fila.dataset.timestampInici);
     });
 
     function formatarData_(iso) {
