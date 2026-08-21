@@ -8,7 +8,7 @@
  * visual/comportamental és total perquè és LITERALMENT el mateix codi que
  * ja funcionava — no hi ha reinterpretació humana pel mig.
  */
-const API_BASE = 'https://monitormaquines-bridge.onrender.com/app';
+const API_BASE = 'https://monitormaquines-bridge-1.onrender.com/app';
 
 async function apiFetch_(path, { method = 'GET', token, body } = {}) {
   const headers = { 'Content-Type': 'application/json' };
