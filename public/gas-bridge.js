@@ -99,10 +99,16 @@ const IMPL = {
   },
 
   // Substitueix N crides getDetallMaquina (una per màquina) per una única
-  // petició: retorna { [machineId]: { fitxa, produccio } } per a totes les
-  // màquines visibles de la sessió.
+  // petició: retorna { [machineId]: { fitxa, produccio } }. Si es passa
+  // machineIds (array), només calcula i torna aquest subconjunt.
   async getFitxesMaquinesBulk(token, filtres) {
     return apiFetch_('/maquines-fitxes' + qs_(filtres || {}), { token });
+  },
+
+  // Versió barata per màquina (sense recalcular fitxa/produccio sencers),
+  // per decidir al client quines màquines cal refrescar de veritat.
+  async getFitxesMaquinesVersions(token) {
+    return apiFetch_('/maquines-fitxes-versions', { token });
   },
 
   async getConsums(token, machineId, tipus, dataInici, dataFi) {

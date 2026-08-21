@@ -445,6 +445,7 @@
     let vistaActual_ = 'maquines';
     let maquinesCache_ = null;
     let fitxaCache_ = {};
+    let fitxaVersionsCache_ = {};
     let produccioCache_ = {};
     let produccioActual_ = null;
     let versioClient_ = null;
@@ -745,6 +746,7 @@
       document.getElementById('preu-aire-wrap').classList.toggle('hidden', !esAdmin_);
       document.getElementById('preu-electric-wrap').classList.toggle('hidden', !esAdmin_);
       aplicarIdioma_();
+      carregarFitxaCachePersistent_();
       if (esAdmin_) carregarFiltresAdmin_();
       carregarMaquines();
       ultimRefrescMaquinesBase_ = Date.now();
@@ -1509,24 +1511,62 @@
       zona.style.display = 'block';
     }
 
+    // Persistència de fitxaCache_/fitxaVersionsCache_ a localStorage: així la
+    // pròxima vegada que s'obri l'app (encara que sigui una sessió nova del
+    // navegador) ja hi ha dades pintades a l'instant, i precarregarFitxesMaquines_
+    // només ha de baixar les màquines que hagin canviat de veritat des de
+    // l'última visita, no totes altre cop.
+    function clauFitxaCachePersistent_() {
+      return 'monitor_fitxaCache_' + (localStorage.getItem('monitor_email') || '');
+    }
+    function carregarFitxaCachePersistent_() {
+      try {
+        const raw = localStorage.getItem(clauFitxaCachePersistent_());
+        if (!raw) return;
+        const desat = JSON.parse(raw);
+        fitxaCache_ = desat.dades || {};
+        fitxaVersionsCache_ = desat.versions || {};
+      } catch (e) { fitxaCache_ = {}; fitxaVersionsCache_ = {}; }
+    }
+    function desarFitxaCachePersistent_() {
+      try {
+        localStorage.setItem(clauFitxaCachePersistent_(), JSON.stringify({ dades: fitxaCache_, versions: fitxaVersionsCache_ }));
+      } catch (e) {}
+    }
+
     // Carrega en silenci la fitxa de totes les màquines (any actual, sense
     // filtres) just quan es pinten les targetes, perquè obrir-la desprès
-    // sigui instantani. Una única crida bulk (abans eren N crides, 2 per
-    // màquina, totes concurrents — saturava el backend amb 50+ màquines).
+    // sigui instantani. Primer demana les versions (barat) i només baixa amb
+    // la crida bulk (cara) les màquines que han canviat des de l'última
+    // vegada — la resta ja les té a fitxaCache_ des de localStorage.
     function precarregarFitxesMaquines_(maquines) {
       const idsRellevants = maquines
         .filter(function (m) { return m.estatActual !== 'incomunicada' && m.estatActual !== 'desactivada'; })
         .map(function (m) { return m.machineId; });
       if (!idsRellevants.length) return;
       google.script.run
-        .withSuccessHandler(function (resposta) {
-          const bulk = typeof resposta === 'string' ? JSON.parse(resposta) : resposta;
-          idsRellevants.forEach(function (machineId) {
-            if (bulk[machineId]) fitxaCache_[machineId] = bulk[machineId];
+        .withSuccessHandler(function (respostaVersions) {
+          const versions = typeof respostaVersions === 'string' ? JSON.parse(respostaVersions) : respostaVersions;
+          const canviats = idsRellevants.filter(function (machineId) {
+            return !fitxaCache_[machineId] || fitxaVersionsCache_[machineId] !== versions[machineId];
           });
+          if (!canviats.length) return;
+          google.script.run
+            .withSuccessHandler(function (resposta) {
+              const bulk = typeof resposta === 'string' ? JSON.parse(resposta) : resposta;
+              canviats.forEach(function (machineId) {
+                if (bulk[machineId]) {
+                  fitxaCache_[machineId] = bulk[machineId];
+                  fitxaVersionsCache_[machineId] = versions[machineId];
+                }
+              });
+              desarFitxaCachePersistent_();
+            })
+            .withFailureHandler(function () {})
+            .getFitxesMaquinesBulk(token, { any: new Date().getFullYear(), mes: null, torn: null, machineIds: canviats });
         })
         .withFailureHandler(function () {})
-        .getFitxesMaquinesBulk(token, { any: new Date().getFullYear(), mes: null, torn: null });
+        .getFitxesMaquinesVersions(token);
     }
 
     let filtreEstatMaquines_ = null;
