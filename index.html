@@ -436,6 +436,13 @@
     let graficHistoric_ = null;
     let graficConsums_ = null;
     let tipusConsumActius_ = ['aire'];
+    function carregarTipusConsumDesat_() {
+      try {
+        const desat = JSON.parse(localStorage.getItem('monitor_consum_tipus') || 'null');
+        if (Array.isArray(desat) && desat.length) return desat;
+      } catch (e) {}
+      return ['aire'];
+    }
     let preuAire_ = 0, preuElectric_ = 0;
     let preusConsumCarregats_ = false;
     let historicDiesActuals_ = [];
@@ -1604,6 +1611,7 @@
     const ICONA_CABAL_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5s6.5 7.6 6.5 12.1a6.5 6.5 0 0 1-13 0C5.5 10.1 12 2.5 12 2.5z"/></svg>';
     const ICONA_CONSUM_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 14h6L10 22l9.5-13h-6L13 2z"/></svg>';
     const ICONA_REFERENCIA_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.5 12.6 20.4a2 2 0 0 1-2.8 0l-6.2-6.2a2 2 0 0 1 0-2.8L11.5 3.5H19a1.5 1.5 0 0 1 1.5 1.5v7.5z"/><circle cx="16" cy="8" r="1.2"/></svg>';
+    const ICONA_PECES_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5z"/><path d="M3 7l9 5 9-5M12 22V12"/></svg>';
 
     function badgeHtml_(estat) {
       const icona = estat === 'incomunicada' ? ICONA_WIFI_OFF : '';
@@ -1648,16 +1656,12 @@
             <div class="img-placeholder">
               ${m.imatgeUrl ? `<img src="${m.imatgeUrl}" alt="${escHtml_(m.nom)}">` : t_('senseImatge')}
               <div class="img-badge">${badgeHtml_(m.estatActual)}</div>
-              ${!incomunicada && !desactivada ? `
-                <div class="img-produccio-avui">
-                  <span class="torn-punt" style="background:${COLORS_TORN_[m.tornActual] || 'var(--text-muted)'}"></span>
-                  ${formatarNumero_(m.pecesBonesAvui)} ${t_('kpi_peces').toLowerCase()}
-                </div>` : ''}
             </div>
             <div class="maquina-info">
               <div class="maquina-top">
                 ${m.clientNom ? `<div class="client-tag">${m.clientNom}</div>` : ''}
                 <span class="nom">${m.nom}</span>
+                <span class="maquina-num">${escHtml_(m.machineId)}</span>
                 ${m.visiblePelClient === false ? `<span class="chip-postamarxa">${t_('chip_postamarxa')}</span>` : ''}
               </div>
               <div class="barres-dades">
@@ -1665,6 +1669,12 @@
                 ${barraHtml_(t_('barra_alarma'), 'fill-alarma', m.horesAlarma)}
                 ${barraHtml_(t_('barra_parada'), 'fill-parada', m.horesParada)}
               </div>
+              ${!incomunicada && !desactivada ? `
+                <div class="peces-avui-row">
+                  <span class="torn-punt" style="background:${COLORS_TORN_[m.tornActual] || 'var(--text-muted)'}"></span>
+                  ${ICONA_PECES_}
+                  <span class="peces-avui-valor">${formatarNumero_(m.pecesBonesAvui)}</span>
+                </div>` : ''}
             </div>`;
           grid.appendChild(card);
         });
@@ -1711,8 +1721,8 @@
       document.querySelectorAll('#filtre-torn-h .filtre-torn-btn.actiu')
         .forEach(boto => boto.classList.remove('actiu'));
       canviarModeProduccio_('avui');
-      tipusConsumActius_ = ['aire'];
-      document.querySelectorAll('#tipus-consum .control-pill').forEach(b => b.classList.toggle('actiu', b.dataset.tipus === 'aire'));
+      tipusConsumActius_ = carregarTipusConsumDesat_();
+      document.querySelectorAll('#tipus-consum .control-pill').forEach(b => b.classList.toggle('actiu', tipusConsumActius_.indexOf(b.dataset.tipus) !== -1));
       document.getElementById('filtre-desde-c').value = '';
       document.getElementById('filtre-fins-c').value = '';
       document.getElementById('home-view').classList.add('hidden');
@@ -2283,6 +2293,13 @@
       document.getElementById('panell-cronologia').classList.remove('cronologia-carregant');
     }
 
+    function formatarHoresMin_(hores) {
+      const totalMin = Math.max(0, Math.round(hores * 60));
+      const h = Math.floor(totalMin / 60);
+      const m = totalMin % 60;
+      return h + 'h ' + String(m).padStart(2, '0') + 'm';
+    }
+
     function kpisCronologiaHtml_(dies) {
       const teDades = dies.some(dia => (dia.segments || []).length > 0);
       if (!teDades) return `<div class="empty-state">${t_('buit_dades')}</div>`;
@@ -2293,10 +2310,10 @@
           totals[s.estat] += (new Date(s.fi) - new Date(s.inici)) / 3600000;
         });
         const parts = [
-          `${t_('cronologia_producint')}: ${totals.marxa.toFixed(1)}h`,
-          `${t_('cronologia_alarma')}: ${totals.alarma.toFixed(1)}h`,
-          `${t_('cronologia_parada')}: ${totals.parada.toFixed(1)}h`,
-          `${t_('cronologia_incomunicada')}: ${totals.incomunicada.toFixed(1)}h`
+          `${t_('cronologia_producint')}: ${formatarHoresMin_(totals.marxa)}`,
+          `${t_('cronologia_alarma')}: ${formatarHoresMin_(totals.alarma)}`,
+          `${t_('cronologia_parada')}: ${formatarHoresMin_(totals.parada)}`,
+          `${t_('cronologia_incomunicada')}: ${formatarHoresMin_(totals.incomunicada)}`
         ];
         return `<div class="kpi"><div class="valor" style="font-size:13px">${parts.join(' · ')}</div><div class="etiqueta">${dia.etiqueta}</div></div>`;
       }).join('');
@@ -3189,6 +3206,7 @@
       const tipus = boto.dataset.tipus;
       boto.classList.toggle('actiu');
       tipusConsumActius_ = Array.from(document.querySelectorAll('#tipus-consum .control-pill.actiu')).map(b => b.dataset.tipus);
+      try { localStorage.setItem('monitor_consum_tipus', JSON.stringify(tipusConsumActius_)); } catch (e) {}
       carregarConsums_();
     });
     document.getElementById('filtre-desde-c').addEventListener('click', function () { obrirDatePicker_(this); });
