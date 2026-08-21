@@ -98,6 +98,13 @@ const IMPL = {
     return JSON.stringify({ fitxa, produccio });
   },
 
+  // Substitueix N crides getDetallMaquina (una per màquina) per una única
+  // petició: retorna { [machineId]: { fitxa, produccio } } per a totes les
+  // màquines visibles de la sessió.
+  async getFitxesMaquinesBulk(token, filtres) {
+    return apiFetch_('/maquines-fitxes' + qs_(filtres || {}), { token });
+  },
+
   async getConsums(token, machineId, tipus, dataInici, dataFi) {
     const dades = await apiFetch_(`/maquines/${machineId}/consums` + qs_({ tipus, dataInici, dataFi }), { token });
     return JSON.stringify(dades);

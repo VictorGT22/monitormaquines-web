@@ -458,7 +458,7 @@
     let ultimRefrescMaquinesBase_ = 0;
     let ultimRefrescMaquinesEstat_ = 0;
     let ultimRefrescMaquinesProduccio_ = 0;
-    const REFRESC_MAQUINES_BASE_MS_ = 120000;
+    const REFRESC_MAQUINES_BASE_MS_ = 60000;
     const REFRESC_MAQUINES_ESTAT_MS_ = 5000;
     const REFRESC_MAQUINES_PRODUCCIO_MS_ = 15000;
 
@@ -1509,16 +1509,24 @@
       zona.style.display = 'block';
     }
 
-    // Carrega en silenci la fitxa de cada màquina (any actual, sense filtres)
-    // just quan es pinten les targetes, perquè obrir-la desprès sigui instantani.
+    // Carrega en silenci la fitxa de totes les màquines (any actual, sense
+    // filtres) just quan es pinten les targetes, perquè obrir-la desprès
+    // sigui instantani. Una única crida bulk (abans eren N crides, 2 per
+    // màquina, totes concurrents — saturava el backend amb 50+ màquines).
     function precarregarFitxesMaquines_(maquines) {
-      maquines.forEach(function (m) {
-        if (m.estatActual === 'incomunicada' || m.estatActual === 'desactivada') return;
-        google.script.run
-          .withSuccessHandler(function (resposta) { fitxaCache_[m.machineId] = JSON.parse(resposta); })
-          .withFailureHandler(function () {})
-          .getDetallMaquina(token, m.machineId, null, null, { any: new Date().getFullYear(), mes: null, torn: null });
-      });
+      const idsRellevants = maquines
+        .filter(function (m) { return m.estatActual !== 'incomunicada' && m.estatActual !== 'desactivada'; })
+        .map(function (m) { return m.machineId; });
+      if (!idsRellevants.length) return;
+      google.script.run
+        .withSuccessHandler(function (resposta) {
+          const bulk = typeof resposta === 'string' ? JSON.parse(resposta) : resposta;
+          idsRellevants.forEach(function (machineId) {
+            if (bulk[machineId]) fitxaCache_[machineId] = bulk[machineId];
+          });
+        })
+        .withFailureHandler(function () {})
+        .getFitxesMaquinesBulk(token, { any: new Date().getFullYear(), mes: null, torn: null });
     }
 
     let filtreEstatMaquines_ = null;
