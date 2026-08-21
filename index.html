@@ -6,6 +6,7 @@
     <title>MonitorMaquines</title>
     <link rel="stylesheet" href="/original.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script type="module">import 'https://cdn.jsdelivr.net/npm/number-flow/+esm';</script>
   </head>
   <body>
     <script src="/gas-bridge.js"></script>
@@ -1613,9 +1614,9 @@
     const ICONA_REFERENCIA_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.5 12.6 20.4a2 2 0 0 1-2.8 0l-6.2-6.2a2 2 0 0 1 0-2.8L11.5 3.5H19a1.5 1.5 0 0 1 1.5 1.5v7.5z"/><circle cx="16" cy="8" r="1.2"/></svg>';
     const ICONA_PECES_ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5z"/><path d="M3 7l9 5 9-5M12 22V12"/></svg>';
 
-    // Recorda l'últim valor de peces pintat per màquina perquè, quan un
-    // repintat de la graella porti un número diferent, la targeta ho pugui
-    // marcar amb un flaix breu en lloc de canviar en silenci.
+    // Recorda l'últim valor de peces pintat per màquina: com cada repintat
+    // de la graella recrea les targetes de zero, és l'únic "abans" que té
+    // <number-flow> per animar la transició cap al valor nou.
     let valorsPecesAnteriors_ = {};
 
     function badgeHtml_(estat) {
@@ -1678,10 +1679,23 @@
                 <div class="peces-avui-row">
                   <span class="torn-punt" style="background:${COLORS_TORN_[m.tornActual] || 'var(--text-muted)'}"></span>
                   ${ICONA_PECES_}
-                  <span class="peces-avui-valor${valorsPecesAnteriors_[m.machineId] !== undefined && valorsPecesAnteriors_[m.machineId] !== m.pecesBonesAvui ? ' valor-flash' : ''}">${formatarNumero_(m.pecesBonesAvui)}</span>
+                  <number-flow class="peces-avui-valor"></number-flow>
                 </div>` : ''}
             </div>`;
           grid.appendChild(card);
+          if (!incomunicada && !desactivada) {
+            const numFlow = card.querySelector('number-flow');
+            const anterior = valorsPecesAnteriors_[m.machineId];
+            // Sembra el valor anterior sense animar (és la primera crida a
+            // update() d'aquest element, sempre instantània) i, si ha
+            // canviat de veritat, dispara la transició al frame següent —
+            // com la targeta es recrea sencera cada repintat, sense aquest
+            // truc NumberFlow no tindria mai un "abans" amb què animar.
+            numFlow.update(anterior !== undefined ? anterior : m.pecesBonesAvui);
+            if (anterior !== undefined && anterior !== m.pecesBonesAvui) {
+              requestAnimationFrame(() => numFlow.update(m.pecesBonesAvui));
+            }
+          }
           valorsPecesAnteriors_[m.machineId] = m.pecesBonesAvui;
         });
       } catch (e) {
