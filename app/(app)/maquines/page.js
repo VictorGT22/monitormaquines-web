@@ -12,6 +12,8 @@ import OeeKpi from '../../components/OeeKpi';
 import DatePickerInput from '../../components/DatePickerInput';
 import GraficProduccio from '../../components/GraficProduccio';
 import GraficHistoric from '../../components/GraficHistoric';
+import GraficCronologia from '../../components/GraficCronologia';
+import GraficConsums, { KpisConsums } from '../../components/GraficConsums';
 
 const COLORS_TORN = { Matí: '#f6c453', Tarda: '#4da3ff', Nit: '#b582f8' };
 
@@ -22,6 +24,15 @@ function scrollA(id) {
   desti.scrollIntoView({ behavior: reduitMotion ? 'auto' : 'smooth', block: 'start' });
 }
 
+function resaltarFila(selectorTaula, timestampInici) {
+  if (!timestampInici) return;
+  const fila = document.querySelector(selectorTaula + ' tr[data-timestamp="' + timestampInici + '"]');
+  if (!fila) return;
+  fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  fila.classList.add('fila-realçada');
+  setTimeout(() => fila.classList.remove('fila-realçada'), 2500);
+}
+
 function FitxaContent() {
   const router = useRouter();
   const machineId = useSearchParams().get('id');
@@ -29,7 +40,9 @@ function FitxaContent() {
   const idioma = sessio?.idioma || 'ca';
 
   const {
-    fitxa, produccio, tornsClient, mostrarReferencia,
+    fitxa, produccio, cronologiaDies, consums, preus,
+    tornsClient, mostrarReferencia,
+    mode, setMode,
     filtreTorn, setFiltreTorn,
     filtreReferencia, setFiltreReferencia,
     filtreAny, setFiltreAny,
@@ -41,14 +54,17 @@ function FitxaContent() {
     filtreMesHist, setFiltreMesHist,
     dataDesdeHist, setDataDesdeHist,
     dataFinsHist, setDataFinsHist,
+    tipusConsumActius, alternarTipusConsum,
+    dataDesdeConsum, setDataDesdeConsum,
+    dataFinsConsum, setDataFinsConsum,
   } = useFitxa(machineId);
 
-  const [mode, setMode] = useState('avui'); // avui | periode
   const [mostrarTaulaProduccio, setMostrarTaulaProduccio] = useState(false);
   const [diesHistoric, setDiesHistoric] = useState([]);
 
   const graficProduccioRef = useRef(null);
   const graficHistoricRef = useRef(null);
+  const graficCronologiaRef = useRef(null);
 
   function alternarTorn(torn) {
     setFiltreTorn((prev) => (prev.indexOf(torn) !== -1 ? prev.filter((v) => v !== torn) : [...prev, torn]));
@@ -92,6 +108,8 @@ function FitxaContent() {
           <a onClick={(e) => { e.preventDefault(); scrollA('panell-parades'); }}>{t(idioma, 'paradas_titol')}</a>
           <a onClick={(e) => { e.preventDefault(); scrollA('panell-actives'); }}>{t(idioma, 'incidencies_actives_titol')}</a>
           <a onClick={(e) => { e.preventDefault(); scrollA('panell-historic'); }}>{t(idioma, 'historic_titol')}</a>
+          <a onClick={(e) => { e.preventDefault(); scrollA('panell-cronologia'); }}>{t(idioma, 'cronologia_titol')}</a>
+          <a onClick={(e) => { e.preventDefault(); scrollA('panell-consums'); }}>{t(idioma, 'consums_titol')}</a>
         </nav>
       </div>
 
@@ -232,11 +250,11 @@ function FitxaContent() {
         <div className="panell" id="panell-parades">
           <h3>{t(idioma, 'paradas_titol')}</h3>
           <div className="taula-scroll">
-            <table>
+            <table id="parades-taula">
               <thead><tr><th>{t(idioma, 'taula_inici')}</th><th>{t(idioma, 'taula_fi')}</th><th>{t(idioma, 'taula_durada')}</th><th>{t(idioma, 'taula_causa')}</th></tr></thead>
               <tbody>
                 {(produccio?.paradas || []).length ? produccio.paradas.map((pa, i) => (
-                  <tr key={i} className={pa.activa ? 'fila-activa' : ''}>
+                  <tr key={i} className={pa.activa ? 'fila-activa' : ''} data-timestamp={pa.inici}>
                     <td>{formatarDataHora_(pa.inici)}</td>
                     <td>{pa.activa ? <span className="chip-en-curs">En curs</span> : formatarDataHora_(pa.fi)}</td>
                     <td>{pa.activa ? '—' : formatarDurada_(pa.duradaMin, pa.duradaSeg)}</td>
@@ -304,7 +322,7 @@ function FitxaContent() {
           </div>
 
           <div className="taula-scroll">
-            <table>
+            <table id="historic-taula">
               <thead><tr>
                 <th>{t(idioma, 'taula_codi')}</th><th>{t(idioma, 'taula_missatge')}</th><th>{t(idioma, 'f_torn')}</th><th>{t(idioma, 'taula_inici')}</th><th>{t(idioma, 'taula_fi')}</th>
               </tr></thead>
@@ -313,6 +331,7 @@ function FitxaContent() {
                   <tr
                     key={idx}
                     className="fila-clicable"
+                    data-timestamp={i.timestampInici}
                     onClick={() => {
                       const dia = i.timestampInici.slice(0, 10);
                       const index = diesHistoric.findIndex((d) => d.data.slice(0, 10) === dia);
@@ -332,6 +351,58 @@ function FitxaContent() {
             </table>
           </div>
         </div>
+
+        {/* ── Cronologia ─────────────────────────────────────────── */}
+        <div className="panell" id="panell-cronologia">
+          <h3>{t(idioma, 'cronologia_titol')}</h3>
+          <GraficCronologia
+            ref={graficCronologiaRef}
+            dies={cronologiaDies}
+            tornsActius={filtreTorn}
+            referencia={filtreReferencia || null}
+            idioma={idioma}
+            onJumpHistoric={(ts) => {
+              scrollA('panell-historic');
+              setTimeout(() => resaltarFila('#historic-taula', ts), 450);
+            }}
+            onJumpParades={(ts) => {
+              scrollA('panell-parades');
+              setTimeout(() => resaltarFila('#parades-taula', ts), 450);
+            }}
+          />
+        </div>
+
+        {/* ── Consums ────────────────────────────────────────────── */}
+        <div className="panell" id="panell-consums">
+          <h3>{t(idioma, 'consums_titol')}</h3>
+          <div className="projecte-pills" id="tipus-consum">
+            {['aire', 'electric'].map(tipus => (
+              <button
+                key={tipus}
+                type="button"
+                className={'control-pill' + (tipusConsumActius.includes(tipus) ? ' actiu' : '')}
+                onClick={() => alternarTipusConsum(tipus)}
+              >
+                {t(idioma, tipus === 'electric' ? 'consum_electric' : 'consum_aire')}
+              </button>
+            ))}
+          </div>
+          <div className="filtres-historic">
+            <div>
+              <label>{t(idioma, 'f_desde')}</label>
+              <DatePickerInput value={dataDesdeConsum} onChange={setDataDesdeConsum} placeholder="dd/mm/aaaa" />
+            </div>
+            <div>
+              <label>{t(idioma, 'f_finsA')}</label>
+              <DatePickerInput value={dataFinsConsum} onChange={setDataFinsConsum} placeholder="dd/mm/aaaa" />
+            </div>
+          </div>
+          <KpisConsums consums={consums} preus={preus} idioma={idioma} />
+          <div className="grafic-wrap">
+            <GraficConsums consums={consums} idioma={idioma} />
+          </div>
+        </div>
+
       </div>
     </div>
   );
