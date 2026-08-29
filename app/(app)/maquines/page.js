@@ -512,7 +512,7 @@ function FitxaContent() {
           {/* ── PERIODE ────────────────────────────────────────── */}
           {mode === 'periode' && produccio?.resum && (
             <div id="bloc-periode-total">
-              <div className="filtres-historic">
+              <div className="filtres-historic filtres-periode-produccio">
                 <div>
                   <label>{t(idioma, 'f_any')}</label>
                   <select value={filtreAny} onChange={(e) => setFiltreAny(e.target.value)}>

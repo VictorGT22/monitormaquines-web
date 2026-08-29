@@ -2125,6 +2125,18 @@
       position:relative; inset:auto; width:auto; min-height:0; transform:none;
     }
     #panell-produccio .kpi-ritme .ritme-fletxa { top:10px; right:11px; }
+    #panell-produccio .filtres-produccio-compactes,
+    #panell-produccio .filtres-periode-produccio {
+      display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+      align-items:end; gap:10px; width:100%;
+    }
+    #panell-produccio .filtres-produccio-compactes > div,
+    #panell-produccio .filtres-periode-produccio > div { width:auto; min-width:0; }
+    #panell-produccio .filtres-produccio-compactes select,
+    #panell-produccio .filtres-periode-produccio select,
+    #panell-produccio .filtres-periode-produccio input { width:100%; min-width:0; box-sizing:border-box; }
+    #panell-produccio .filtres-produccio-compactes .torns-chips { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; }
+    #panell-produccio .filtres-produccio-compactes .torn-chip { min-width:0; padding-left:5px; padding-right:5px; text-align:center; }
 
     /* Exemple de taula adaptativa: una parada es llegeix com una fitxa. */
     #panell-parades > .taula-scroll { display:none; }
