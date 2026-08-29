@@ -139,6 +139,31 @@
   input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
+  .app-select { position:relative; width:100%; min-width:0; font-family:var(--font-body); }
+  .app-select-trigger {
+    width:100%; min-height:40px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:0 11px; border:1px solid rgba(255,255,255,.11); border-radius:10px;
+    background:#151e27; color:#e8edf2; font:500 12px var(--font-body); text-align:left; cursor:pointer;
+    transition:border-color .16s,background .16s,box-shadow .16s;
+  }
+  .app-select-trigger:hover,.app-select.open .app-select-trigger { border-color:rgba(255,255,255,.45); background:#1a2430; }
+  .app-select-trigger:focus-visible { outline:0; border-color:rgba(255,255,255,.55); box-shadow:0 0 0 3px rgba(255,255,255,.055); }
+  .app-select-trigger > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .app-select-trigger svg { flex:0 0 16px; width:16px; height:16px; fill:none; stroke:#aeb8c5; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; transition:transform .16s; }
+  .app-select.open .app-select-trigger svg { transform:rotate(180deg); }
+  .app-select-menu {
+    position:absolute; z-index:1200; top:calc(100% + 6px); left:0; width:max-content; min-width:100%; max-width:min(320px,calc(100vw - 32px));
+    max-height:260px; overflow:auto; padding:6px; border:1px solid rgba(255,255,255,.13); border-radius:12px;
+    background:#1b2530; box-shadow:0 18px 45px rgba(0,0,0,.42);
+  }
+  .app-select-menu button {
+    width:100%; min-height:36px; display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:0 10px; border:0; border-radius:8px; background:transparent; color:#cbd3dd;
+    font:500 11px var(--font-body); text-align:left; cursor:pointer; white-space:nowrap;
+  }
+  .app-select-menu button:hover,.app-select-menu button:focus-visible { outline:0; background:rgba(255,255,255,.065); color:#fff; }
+  .app-select-menu button.selected { background:rgba(255,255,255,.085); color:#fff; }
+  .app-select-check { color:var(--accent); font-size:13px; }
   html, body {
     background: var(--bg);
     overscroll-behavior: none;
@@ -1774,6 +1799,10 @@
   #fitxa-view .filtres-historic label { color:#9eabbc; font-size:9px; font-weight:650; }
   #fitxa-view .filtres-historic input,
   #fitxa-view .filtres-historic select { min-height:38px; padding:0 11px; border-color:rgba(255,255,255,.1); border-radius:10px; background:#1b2430; color:#e8edf2; font-family:var(--font-body); font-size:11px; color-scheme:dark; }
+  #fitxa-view .filtres-historic .app-select-trigger {
+    min-height:38px; border-color:rgba(255,255,255,.1); background:#1b2430;
+    color:#e8edf2; font-size:11px;
+  }
   #fitxa-view .filtres-historic input:focus,
   #fitxa-view .filtres-historic select:focus { outline:0; border-color:rgba(255,255,255,.48); box-shadow:0 0 0 3px rgba(255,255,255,.05); }
   #fitxa-view .filtres-historic .filtre-torn-btn { min-height:38px; border-color:rgba(255,255,255,.1); background:#1b2430; color:#aab5c4; font-weight:500; }

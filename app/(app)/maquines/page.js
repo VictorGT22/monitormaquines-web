@@ -26,6 +26,7 @@ import GraficHistoric from '../../components/GraficHistoric';
 import GraficCronologia from '../../components/GraficCronologia';
 import GraficConsums, { KpisConsums } from '../../components/GraficConsums';
 import PanellManteniment from '../../components/PanellManteniment';
+import AppSelect from '../../components/AppSelect';
 
 const COLORS_TORN = { Matí: '#f6c453', Tarda: '#4da3ff', Nit: '#b582f8' };
 const APARTATS_FITXA = ['panell-produccio', 'panell-cronologia', 'panell-parades', 'panell-historic', 'panell-consums', 'panell-manteniment'];
@@ -446,12 +447,10 @@ function FitxaContent() {
             {mostrarReferencia && (
               <div>
                 <label>{t(idioma, 'f_referencia')}</label>
-                <select value={filtreReferencia} onChange={(e) => setFiltreReferencia(e.target.value)}>
-                  <option value="">{t(idioma, 'f_totes')}</option>
-                  {(produccio?.referenciesDisponibles || []).map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
+                <AppSelect ariaLabel={t(idioma, 'f_referencia')} value={filtreReferencia} onChange={setFiltreReferencia} options={[
+                  { value: '', label: t(idioma, 'f_totes') },
+                  ...(produccio?.referenciesDisponibles || []).map((r) => ({ value: r, label: r })),
+                ]} />
               </div>
             )}
           </div>
@@ -515,21 +514,17 @@ function FitxaContent() {
               <div className="filtres-historic filtres-periode-produccio">
                 <div>
                   <label>{t(idioma, 'f_any')}</label>
-                  <select value={filtreAny} onChange={(e) => setFiltreAny(e.target.value)}>
-                    <option value="">{t(idioma, 'f_tots')}</option>
-                    {(produccio.anysDisponibles || []).map((a) => (
-                      <option key={a} value={a}>{a}</option>
-                    ))}
-                  </select>
+                  <AppSelect ariaLabel={t(idioma, 'f_any')} value={filtreAny} onChange={setFiltreAny} options={[
+                    { value: '', label: t(idioma, 'f_tots') },
+                    ...(produccio.anysDisponibles || []).map((a) => ({ value: a, label: a })),
+                  ]} />
                 </div>
                 <div>
                   <label>{t(idioma, 'f_mes')}</label>
-                  <select value={filtreMes} onChange={(e) => setFiltreMes(e.target.value)}>
-                    <option value="">{t(idioma, 'f_tots')}</option>
-                    {t(idioma, 'mesos').map((nom, i) => (
-                      <option key={i} value={i + 1}>{nom}</option>
-                    ))}
-                  </select>
+                  <AppSelect ariaLabel={t(idioma, 'f_mes')} value={filtreMes} onChange={setFiltreMes} options={[
+                    { value: '', label: t(idioma, 'f_tots') },
+                    ...t(idioma, 'mesos').map((nom, i) => ({ value: i + 1, label: nom })),
+                  ]} />
                 </div>
                 <div>
                   <label>{t(idioma, 'f_desde')}</label>
@@ -822,21 +817,17 @@ function FitxaContent() {
           {MOSTRAR_FILTRES_ESPECIFICS && <div className="filtres-historic">
             <div>
               <label>{t(idioma, 'f_any')}</label>
-              <select value={filtreAnyHist} onChange={(e) => setFiltreAnyHist(e.target.value)}>
-                <option value="">{t(idioma, 'f_tots')}</option>
-                {(fitxa?.anysDisponiblesHistoric || []).map((a) => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
+              <AppSelect ariaLabel={t(idioma, 'f_any')} value={filtreAnyHist} onChange={setFiltreAnyHist} options={[
+                { value: '', label: t(idioma, 'f_tots') },
+                ...(fitxa?.anysDisponiblesHistoric || []).map((a) => ({ value: a, label: a })),
+              ]} />
             </div>
             <div>
               <label>{t(idioma, 'f_mes')}</label>
-              <select value={filtreMesHist} onChange={(e) => setFiltreMesHist(e.target.value)}>
-                <option value="">{t(idioma, 'f_tots')}</option>
-                {t(idioma, 'mesos').map((nom, i) => (
-                  <option key={i} value={i + 1}>{nom}</option>
-                ))}
-              </select>
+              <AppSelect ariaLabel={t(idioma, 'f_mes')} value={filtreMesHist} onChange={setFiltreMesHist} options={[
+                { value: '', label: t(idioma, 'f_tots') },
+                ...t(idioma, 'mesos').map((nom, i) => ({ value: i + 1, label: nom })),
+              ]} />
             </div>
             {horariUnic ? <div>
               <label>{t(idioma, 'f_torn')}</label>

@@ -6,6 +6,7 @@ import { useConsumXarxa } from '../lib/useConsumXarxa';
 import { t } from '../lib/i18n';
 import { IconaWifiOff } from '../lib/icons';
 import MaquinaCard from '../components/MaquinaCard';
+import AppSelect from '../components/AppSelect';
 
 const ESTATS_CHIP = ['marxa', 'parada', 'alarma', 'incomunicada', 'desactivada'];
 
@@ -42,21 +43,17 @@ export default function HomePage() {
         <div id="admin-filtres" className="filtres-historic">
           <div>
             <label>{t(idioma, 'admin_client')}</label>
-            <select value={filtreClient} onChange={(e) => setFiltreClient(e.target.value)}>
-              <option value="">{t(idioma, 'admin_totsClients')}</option>
-              {(filtresAdmin?.clients || []).map((c) => (
-                <option key={c.tenantId} value={c.tenantId}>{c.nom}</option>
-              ))}
-            </select>
+            <AppSelect ariaLabel={t(idioma, 'admin_client')} value={filtreClient} onChange={setFiltreClient} options={[
+              { value: '', label: t(idioma, 'admin_totsClients') },
+              ...(filtresAdmin?.clients || []).map((c) => ({ value: c.tenantId, label: c.nom })),
+            ]} />
           </div>
           <div>
             <label>{t(idioma, 'f_any')}</label>
-            <select value={filtreAny} onChange={(e) => setFiltreAny(e.target.value)}>
-              <option value="">{t(idioma, 'f_tots')}</option>
-              {(filtresAdmin?.anys || []).map((a) => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
+            <AppSelect ariaLabel={t(idioma, 'f_any')} value={filtreAny} onChange={setFiltreAny} options={[
+              { value: '', label: t(idioma, 'f_tots') },
+              ...(filtresAdmin?.anys || []).map((a) => ({ value: a, label: a })),
+            ]} />
           </div>
           <div style={{ flex: 1, minWidth: 160 }}>
             <label>{t(idioma, 'admin_cercarLbl')}</label>
