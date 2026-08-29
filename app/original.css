@@ -2076,7 +2076,8 @@
     #projectes-view .projecte-card { align-self:start; min-height:0; padding:15px; }
 
     /* Configuració de client: targetes de pla curtes i taula utilitzable. */
-    .client-config-view { padding-bottom:24px; }
+    .client-config-view { width:100%; max-width:100%; min-width:0; padding-bottom:24px; overflow-x:hidden; }
+    .client-config-view > * { max-width:100%; min-width:0; }
     .client-config-view .config-back { margin-bottom:8px; }
     .client-config-view .client-config-header {
       display:grid; gap:13px; margin-bottom:20px; padding:8px 0 18px;
@@ -2084,9 +2085,10 @@
     .client-config-view .client-config-header h2 { font-size:25px; }
     .client-config-view .client-config-estat { align-items:flex-start; min-width:0; }
     .client-config-view .client-plans-section { padding-bottom:22px; }
-    .client-config-view .plans-grid { gap:10px; margin-top:14px; }
+    .client-config-view .plans-grid { width:100%; min-width:0; grid-template-columns:minmax(0,1fr); gap:10px; margin-top:14px; }
     .client-config-view .plan-card {
-      min-height:0; padding:17px 18px; border-radius:16px;
+      width:100%; max-width:100%; min-width:0; min-height:0; box-sizing:border-box;
+      padding:17px 18px; border-radius:16px;
     }
     .client-config-view .plan-card-top { min-height:34px; margin-bottom:8px; }
     .client-config-view .plan-icon { width:34px; height:34px; }
@@ -2096,7 +2098,7 @@
     .client-config-view .plan-features { gap:7px; margin-bottom:15px; }
     .client-config-view .plan-select-cta { min-height:39px; margin-top:0; }
     .client-config-view .client-users-section { padding:24px 0 15px; }
-    .client-config-view .client-users-table { margin-top:13px; overflow-x:auto; }
+    .client-config-view .client-users-table { width:100%; max-width:100%; margin-top:13px; overflow-x:auto; }
     .client-config-view .client-users-table table { min-width:560px; }
     .client-config-view .client-users-table th { padding:10px 12px; }
     .client-config-view .client-users-table td { height:62px; padding:10px 12px; }
