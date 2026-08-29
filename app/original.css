@@ -1816,7 +1816,7 @@
   .client-config-view .modal-actions .btn-primary:hover { border-color:#fff; background:#eef1f4; }
 
   /* Parades del període: primera secció migrada al nou estàndard. */
-  #fitxa-view #panell-parades { padding:24px; border:1px solid rgba(255,255,255,.11); border-radius:20px; background:linear-gradient(180deg,rgba(35,46,59,.96),rgba(27,36,47,.96)); box-shadow:none; }
+  #fitxa-view #panell-parades { padding:24px; border:1px solid rgba(255,255,255,.11); border-radius:20px; background:linear-gradient(180deg,rgba(30,40,52,.98),rgba(23,32,42,.98)); box-shadow:none; }
   #panell-parades .parades-panel-head { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin-bottom:18px; }
   #panell-parades .parades-panel-head span { display:block; color:#c1cbd7; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
   #panell-parades .parades-panel-head h3 { margin:0; color:#fff; font-family:var(--font-body); font-size:17px; font-weight:650; letter-spacing:-.015em; text-transform:none; }
