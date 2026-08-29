@@ -736,6 +736,24 @@ function FitxaContent() {
               </tbody>
             </table>
           </div>
+          <div className="parades-mobile-list" aria-label="Parades del període">
+            {paradasFiltrades.length ? (
+              (totesParades ? paradasFiltrades : paradasFiltrades.slice(0, LIMIT_LLISTA)).map((pa, i) => (
+                <article className={'parada-mobile-card' + (pa.activa ? ' activa' : '')} key={i} data-timestamp={pa.inici}>
+                  <div className="parada-mobile-cap">
+                    <strong>{pa.causa}</strong>
+                    {pa.activa && <span className="chip-en-curs">En curs</span>}
+                  </div>
+                  <dl>
+                    <div className="parada-mobile-torns"><dt>{t(idioma, 'f_torn')}</dt><dd><TornCell torns={pa.torns && pa.torns.length ? pa.torns : [calcularTorn_(pa.inici)]} idioma={idioma} /></dd></div>
+                    <div><dt>{t(idioma, 'taula_inici')}</dt><dd>{formatarDataHora_(pa.inici)}</dd></div>
+                    <div><dt>{t(idioma, 'taula_fi')}</dt><dd>{pa.activa ? '—' : formatarDataHora_(pa.fi)}</dd></div>
+                    <div><dt>{t(idioma, 'taula_durada').replace(/\s*\(min\)$/i, '')}</dt><dd>{pa.activa ? '—' : Number(pa.duradaMin) > 0 ? `${pa.duradaMin} min` : `${pa.duradaSeg || 0} s`}</dd></div>
+                  </dl>
+                </article>
+              ))
+            ) : <div className="empty-state">{t(idioma, 'buit_paradas')}</div>}
+          </div>
           {!totesParades && paradasFiltrades.length > LIMIT_LLISTA && (
             <button type="button" className="secondary-btn" onClick={() => setTotesParades(true)} style={{ marginTop: 10 }}>
               Veure més ({paradasFiltrades.length - LIMIT_LLISTA} més)

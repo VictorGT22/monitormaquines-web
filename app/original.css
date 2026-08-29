@@ -1830,6 +1830,7 @@
   #panell-parades #parades-taula th:nth-child(3),#panell-parades #parades-taula th:nth-child(4),#panell-parades #parades-taula th:nth-child(5),#panell-parades #parades-taula td:nth-child(3),#panell-parades #parades-taula td:nth-child(4),#panell-parades #parades-taula td:nth-child(5) { text-align:center; }
   #panell-parades #parades-taula tr:hover { background:rgba(255,255,255,.04); }
   #panell-parades #parades-taula tr.fila-activa { background:rgba(245,166,35,.07); box-shadow:inset 3px 0 0 var(--ambre); }
+  .parades-mobile-list { display:none; }
   #panell-parades .chip-en-curs { border-color:rgba(245,166,35,.28); background:rgba(245,166,35,.1); }
   #panell-parades > .secondary-btn { margin-top:14px !important; border:1px solid rgba(255,255,255,.16); border-radius:11px; background:transparent; color:#d8e0e9; box-shadow:none; }
   #panell-parades > .secondary-btn:hover { border-color:rgba(255,255,255,.5); background:rgba(255,255,255,.05); color:#fff; transform:none; }
@@ -2120,4 +2121,32 @@
       max-width:100%; font-size:18px; line-height:1.25; white-space:normal;
       overflow-wrap:anywhere;
     }
+
+    /* Exemple de taula adaptativa: una parada es llegeix com una fitxa. */
+    #panell-parades > .taula-scroll { display:none; }
+    #panell-parades .parades-mobile-list { display:grid; gap:10px; }
+    #panell-parades .parada-mobile-card {
+      overflow:hidden; border:1px solid rgba(255,255,255,.1); border-radius:14px;
+      background:#202b36;
+    }
+    #panell-parades .parada-mobile-card.activa { border-left:3px solid var(--ambre); }
+    #panell-parades .parada-mobile-cap {
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+      padding:14px 14px 12px; border-bottom:1px solid rgba(255,255,255,.07);
+    }
+    #panell-parades .parada-mobile-cap strong { color:#fff; font-size:13px; line-height:1.35; }
+    #panell-parades .parada-mobile-card dl { display:grid; grid-template-columns:1fr 1fr; margin:0; }
+    #panell-parades .parada-mobile-card dl > div {
+      min-width:0; padding:11px 14px; border-bottom:1px solid rgba(255,255,255,.055);
+    }
+    #panell-parades .parada-mobile-card dl > div:nth-child(odd) { border-right:1px solid rgba(255,255,255,.055); }
+    #panell-parades .parada-mobile-card dl > div:nth-last-child(-n+2) { border-bottom:0; }
+    #panell-parades .parada-mobile-card dt {
+      margin-bottom:5px; color:#8f9bad; font-size:9px; font-weight:650;
+      letter-spacing:.065em; text-transform:uppercase;
+    }
+    #panell-parades .parada-mobile-card dd {
+      margin:0; color:#e7ebef; font-size:12px; font-variant-numeric:tabular-nums;
+    }
+    #panell-parades .parada-mobile-torns { grid-column:1/-1; border-right:0 !important; }
   }
