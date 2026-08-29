@@ -129,9 +129,15 @@ function FitxaContent() {
   const LIMIT_LLISTA = 10;
   const [totesParades, setTotesParades] = useState(false);
   const [totHistoric, setTotHistoric] = useState(false);
+  const [mesProduccioMobil, setMesProduccioMobil] = useState(false);
+  const [mesParadesMobil, setMesParadesMobil] = useState(false);
+  const [mesHistoricMobil, setMesHistoricMobil] = useState(false);
   useEffect(() => {
     setTotesParades(false);
     setTotHistoric(false);
+    setMesProduccioMobil(false);
+    setMesParadesMobil(false);
+    setMesHistoricMobil(false);
     setApartatActiu('panell-produccio');
     setVistaFitxa('produccio');
     setConsumsActivatsPerMaquina(null);
@@ -420,18 +426,6 @@ function FitxaContent() {
         <div className="panell" id="panell-produccio">
           <h3>{t(idioma, 'produccio_titol')}</h3>
 
-          {produccio?.resumAvui && (
-            <div className={'kpi kpi-ritme kpi-ritme-' + tendencia}>
-              <div className="valor">
-                {mitjanaPerHora} <span className="ritme-unitat">peces/h</span>
-              </div>
-              <div className="etiqueta">Ritme de producció</div>
-              <span className={'ritme-fletxa' + (tendencia === 'estable' ? ' ritme-fletxa-igual' : '')} aria-hidden="true">
-                {tendencia === 'pujant' ? '↑' : tendencia === 'baixant' ? '↓' : '='}
-              </span>
-            </div>
-          )}
-
           <div className="subtabs">
             <button type="button" className={'nav-tab' + (mode === 'avui' ? ' actiu' : '')} onClick={() => setMode('avui')}>
               {t(idioma, 'mode_avui')}
@@ -501,6 +495,16 @@ function FitxaContent() {
                   qualitat={produccio.resumAvui.qualitat}
                   oee={produccio.resumAvui.oee}
                 />
+
+                <div className={'kpi kpi-ritme kpi-ritme-' + tendencia}>
+                  <div className="valor">
+                    {mitjanaPerHora} <span className="ritme-unitat">peces/h</span>
+                  </div>
+                  <div className="etiqueta">Ritme de producció</div>
+                  <span className={'ritme-fletxa' + (tendencia === 'estable' ? ' ritme-fletxa-igual' : '')} aria-hidden="true">
+                    {tendencia === 'pujant' ? '↑' : tendencia === 'baixant' ? '↓' : '='}
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -597,6 +601,16 @@ function FitxaContent() {
                   qualitat={produccio.resum.qualitat}
                   oee={produccio.resum.oee}
                 />
+
+                <div className={'kpi kpi-ritme kpi-ritme-' + tendencia}>
+                  <div className="valor">
+                    {mitjanaPerHora} <span className="ritme-unitat">peces/h</span>
+                  </div>
+                  <div className="etiqueta">Ritme de producció</div>
+                  <span className={'ritme-fletxa' + (tendencia === 'estable' ? ' ritme-fletxa-igual' : '')} aria-hidden="true">
+                    {tendencia === 'pujant' ? '↑' : tendencia === 'baixant' ? '↓' : '='}
+                  </span>
+                </div>
               </div>
 
               <div className="grafic-wrap">
@@ -616,7 +630,8 @@ function FitxaContent() {
               </div>
 
               {mostrarTaulaProduccio && (
-                <div className="taula-scroll">
+                <>
+                <div className="taula-scroll produccio-table-desktop">
                   <table>
                     <thead>
                       <tr>
@@ -663,6 +678,33 @@ function FitxaContent() {
                     </tbody>
                   </table>
                 </div>
+                <div className="dades-mobile-list produccio-mobile-list" aria-label="Dades de producció">
+                  {(mostrarReferencia && (produccio.perDiaPerReferencia || []).length
+                    ? produccio.perDiaPerReferencia
+                    : (produccio.perDia || [])
+                  ).slice(0, mesProduccioMobil ? undefined : 3).map((d, i) => {
+                    const indexDia = (produccio.perDia || []).findIndex((dd) => dd.data === d.data);
+                    return (
+                      <article className="dada-mobile-card" key={`${d.data}-${d.referencia || i}`} onClick={indexDia !== -1 ? () => graficProduccioRef.current?.mostrarTooltip(indexDia) : undefined}>
+                        <div className="dada-mobile-cap"><strong>{formatarData_(d.data)}</strong>{mostrarReferencia && <span>{d.referencia || '-'}</span>}</div>
+                        <dl>
+                          <div><dt>{t(idioma, 'taula_pecesbones')}</dt><dd>{d.pecesBones}</dd></div>
+                          <div><dt>{t(idioma, 'taula_merma')}</dt><dd>{d.pecesMerma}</dd></div>
+                          <div className="dada-mobile-ampla"><dt>{t(idioma, 'taula_actiu')}</dt><dd>{d.tempsActiuMin} min</dd></div>
+                        </dl>
+                      </article>
+                    );
+                  })}
+                  {!(mostrarReferencia && (produccio.perDiaPerReferencia || []).length ? produccio.perDiaPerReferencia.length : (produccio.perDia || []).length) && (
+                    <div className="empty-state">{t(idioma, 'buit_dades')}</div>
+                  )}
+                </div>
+                {(mostrarReferencia && (produccio.perDiaPerReferencia || []).length ? produccio.perDiaPerReferencia.length : (produccio.perDia || []).length) > 3 && (
+                  <button type="button" className="secondary-btn mobile-more-btn" onClick={() => setMesProduccioMobil((v) => !v)}>
+                    {mesProduccioMobil ? 'Mostrar menys' : `Mostrar més (${(mostrarReferencia && (produccio.perDiaPerReferencia || []).length ? produccio.perDiaPerReferencia.length : (produccio.perDia || []).length) - 3})`}
+                  </button>
+                )}
+                </>
               )}
             </div>
           )}
@@ -738,7 +780,7 @@ function FitxaContent() {
           </div>
           <div className="parades-mobile-list" aria-label="Parades del període">
             {paradasFiltrades.length ? (
-              (totesParades ? paradasFiltrades : paradasFiltrades.slice(0, LIMIT_LLISTA)).map((pa, i) => (
+              (mesParadesMobil ? paradasFiltrades : paradasFiltrades.slice(0, 3)).map((pa, i) => (
                 <article className={'parada-mobile-card' + (pa.activa ? ' activa' : '')} key={i} data-timestamp={pa.inici}>
                   <div className="parada-mobile-cap">
                     <strong>{pa.causa}</strong>
@@ -754,8 +796,13 @@ function FitxaContent() {
               ))
             ) : <div className="empty-state">{t(idioma, 'buit_paradas')}</div>}
           </div>
+          {paradasFiltrades.length > 3 && (
+            <button type="button" className="secondary-btn mobile-more-btn" onClick={() => setMesParadesMobil((v) => !v)}>
+              {mesParadesMobil ? 'Mostrar menys' : `Mostrar més (${paradasFiltrades.length - 3})`}
+            </button>
+          )}
           {!totesParades && paradasFiltrades.length > LIMIT_LLISTA && (
-            <button type="button" className="secondary-btn" onClick={() => setTotesParades(true)} style={{ marginTop: 10 }}>
+            <button type="button" className="secondary-btn desktop-more-btn" onClick={() => setTotesParades(true)} style={{ marginTop: 10 }}>
               Veure més ({paradasFiltrades.length - LIMIT_LLISTA} més)
             </button>
           )}
@@ -834,7 +881,7 @@ function FitxaContent() {
             />
           </div>
 
-          <div className="taula-scroll">
+          <div className="taula-scroll historic-table-desktop">
             <table id="historic-taula" className="taula-vores-columnes">
               <thead>
                 <tr>
@@ -874,8 +921,28 @@ function FitxaContent() {
               </tbody>
             </table>
           </div>
+          <div className="dades-mobile-list historic-mobile-list" aria-label="Històric d'incidències">
+            {incidenciesTaula.length ? (
+              (mesHistoricMobil ? incidenciesTaula : incidenciesTaula.slice(0, 3)).map((i, idx) => (
+                <article className={'dada-mobile-card' + (i.activa ? ' activa' : '')} key={`${i.timestampInici}-${idx}`}>
+                  <div className="dada-mobile-cap"><span className="historic-code-chip">{i.codi}</span><strong>{i.missatge}</strong></div>
+                  <dl>
+                    <div className="dada-mobile-ampla"><dt>{t(idioma, 'f_torn')}</dt><dd><TornCell torns={i.torns && i.torns.length ? i.torns : [i.torn]} idioma={idioma} /></dd></div>
+                    <div><dt>{t(idioma, 'taula_inici')}</dt><dd>{formatarDataHora_(i.timestampInici)}</dd></div>
+                    <div><dt>{t(idioma, 'taula_fi')}</dt><dd>{i.activa ? 'En curs' : formatarDataHora_(i.timestampFi)}</dd></div>
+                    <div className="dada-mobile-ampla"><dt>{t(idioma, 'taula_durada').replace(/\s*\(min\)$/i, '')}</dt><dd>{i.activa ? '—' : i.duradaMin != null ? Number(i.duradaMin) > 0 ? `${i.duradaMin} min` : `${i.duradaSeg || 0} s` : '—'}</dd></div>
+                  </dl>
+                </article>
+              ))
+            ) : <div className="empty-state">{t(idioma, 'buit_incidencies')}</div>}
+          </div>
+          {incidenciesTaula.length > 3 && (
+            <button type="button" className="secondary-btn mobile-more-btn" onClick={() => setMesHistoricMobil((v) => !v)}>
+              {mesHistoricMobil ? 'Mostrar menys' : `Mostrar més (${incidenciesTaula.length - 3})`}
+            </button>
+          )}
           {!totHistoric && incidenciesTaula.length > LIMIT_LLISTA && (
-            <button type="button" className="secondary-btn" onClick={() => setTotHistoric(true)} style={{ marginTop: 10 }}>
+            <button type="button" className="secondary-btn desktop-more-btn" onClick={() => setTotHistoric(true)} style={{ marginTop: 10 }}>
               Veure més ({incidenciesTaula.length - LIMIT_LLISTA} més)
             </button>
           )}
