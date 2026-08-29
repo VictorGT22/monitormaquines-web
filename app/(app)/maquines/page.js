@@ -25,7 +25,6 @@ import GraficProduccio from '../../components/GraficProduccio';
 import GraficHistoric from '../../components/GraficHistoric';
 import GraficCronologia from '../../components/GraficCronologia';
 import GraficConsums, { KpisConsums } from '../../components/GraficConsums';
-import { separarHoresMinuts_ } from '../../components/HorasMinutos';
 import PanellManteniment from '../../components/PanellManteniment';
 
 const COLORS_TORN = { Matí: '#f6c453', Tarda: '#4da3ff', Nit: '#b582f8' };
@@ -48,83 +47,6 @@ function resaltarFila(selectorTaula, timestampInici) {
   fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
   fila.classList.add('fila-realçada');
   setTimeout(() => fila.classList.remove('fila-realçada'), 2500);
-}
-
-const CAMPS_NUMBER_FLOW_AVUI = [
-  'pecesBones', 'pecesMerma', 'percentMerma',
-  'tempsActiuHores', 'tempsActiuMinuts', 'disponibilitat',
-  'tempsParatHores', 'tempsParatMinuts',
-];
-
-// Camps del KPI d'avui animats amb <number-flow>: cada ref apunta al node
-// custom element, actualitzat imperativament via node.update() perquè
-// number-flow no accepta el valor com a prop React normal.
-function useNumberFlowAvui(resumAvui) {
-  const nodes = useRef({});
-  const valorsAnteriors = useRef({});
-
-  // Refs de CALLBACK (no useRef simple): els blocs "Avui"/"Període" i les
-  // pestanyes Producció/Manteniment desmunten aquests <number-flow> quan
-  // no es mostren. En remuntar (tornar a "Avui" o a Producció) React crea
-  // nodes DOM nous, però l'efecte de sota només empeny valors quan
-  // `resumAvui` CANVIA — si les dades ja eren les mateixes d'abans de
-  // desmuntar, l'efecte no es torna a disparar i el node nou es queda
-  // buit per sempre (els KPI desapareixien en canviar de pestanya i
-  // tornar). El callback ref cobreix aquest cas: en muntar-se, empeny
-  // immediatament l'últim valor conegut.
-  const timing = { duration: 450, easing: 'ease-out' };
-  const refs = useRef({});
-  if (!Object.keys(refs.current).length) {
-    CAMPS_NUMBER_FLOW_AVUI.forEach((camp) => {
-      refs.current[camp] = (node) => {
-        nodes.current[camp] = node;
-        if (!node) return;
-        node.transformTiming = timing;
-        node.spinTiming = timing;
-        node.opacityTiming = { duration: 300, easing: 'ease-out' };
-        const valorConegut = valorsAnteriors.current[camp];
-        if (valorConegut !== undefined) node.update(valorConegut);
-      };
-    });
-  }
-
-  useEffect(() => {
-    if (!resumAvui) return;
-    const tempsActiu = separarHoresMinuts_(Number(resumAvui.tempsActiuMin) || 0);
-    const tempsParat = separarHoresMinuts_(Number(resumAvui.tempsParatMin) || 0);
-
-    const actual = {
-      pecesBones: Number(resumAvui.pecesBones) || 0,
-      pecesMerma: Number(resumAvui.pecesMerma) || 0,
-      percentMerma: Number(resumAvui.percentMerma) || 0,
-      tempsActiuHores: Number(tempsActiu?.hores) || 0,
-      tempsActiuMinuts: Number(tempsActiu?.minuts) || 0,
-      disponibilitat: Math.round((Number(resumAvui.disponibilitat) || 0) * 100),
-      tempsParatHores: Number(tempsParat?.hores) || 0,
-      tempsParatMinuts: Number(tempsParat?.minuts) || 0,
-    };
-
-    const anterior = valorsAnteriors.current;
-    const primeraCarrega = anterior.pecesBones === undefined;
-
-    Object.keys(actual).forEach((camp) => {
-      if (primeraCarrega || anterior[camp] !== actual[camp]) {
-        const aplicar = () => nodes.current[camp]?.update?.(actual[camp]);
-        primeraCarrega ? aplicar() : requestAnimationFrame(aplicar);
-      }
-    });
-
-    valorsAnteriors.current = actual;
-  }, [
-    resumAvui?.pecesBones,
-    resumAvui?.pecesMerma,
-    resumAvui?.percentMerma,
-    resumAvui?.tempsActiuMin,
-    resumAvui?.disponibilitat,
-    resumAvui?.tempsParatMin,
-  ]);
-
-  return refs.current;
 }
 
 // Ritme de producció: mitjana de peces/hora d'avui (peces bones ÷ hores
@@ -265,7 +187,6 @@ function FitxaContent() {
     scrollA(id);
   }
 
-  const nf = useNumberFlowAvui(produccio?.resumAvui);
   const { mitjanaPerHora, tendencia } = useTendenciaProduccio(produccio?.resumAvui);
 
   function alternarTorn(torn) {
@@ -548,39 +469,28 @@ function FitxaContent() {
 
                 <div className="kpi kpi-produccio">
                   <div className="valor">
-                    <number-flow ref={nf.pecesBones} className="peces-bones-valor"></number-flow>
+                    {formatarNumero_(idioma, produccio.resumAvui.pecesBones || 0)}
                   </div>
                   <div className="etiqueta">{t(idioma, 'kpi_peces')}</div>
                 </div>
 
                 <div className="kpi kpi-merma">
                   <div className="valor">
-                    <number-flow ref={nf.pecesMerma} className="peces-merma-valor"></number-flow>
-                    {' ('}
-                    <number-flow ref={nf.percentMerma} className="percent-merma-valor"></number-flow>
-                    {'%)'}
+                    {formatarNumero_(idioma, produccio.resumAvui.pecesMerma || 0)} ({Math.round(Number(produccio.resumAvui.percentMerma) || 0)}%)
                   </div>
                   <div className="etiqueta">{t(idioma, 'kpi_merma')}</div>
                 </div>
 
                 <div className="kpi kpi-actiu-wrap">
                   <div className="valor">
-                    <number-flow ref={nf.tempsActiuHores} className="temps-actiu-hores-valor"></number-flow>
-                    h&nbsp;
-                    <number-flow ref={nf.tempsActiuMinuts} className="temps-actiu-minuts-valor" digits="2"></number-flow>
-                    min&nbsp;(
-                    <number-flow ref={nf.disponibilitat} className="disponibilitat-valor"></number-flow>
-                    %)
+                    {formatarHoresMin_(produccio.resumAvui.tempsActiuMin || 0)} ({Math.round(Number(produccio.resumAvui.disponibilitat) || 0)}%)
                   </div>
                   <div className="etiqueta">{t(idioma, 'kpi_actiu')}</div>
                 </div>
 
                 <div className="kpi kpi-parat-wrap">
                   <div className="valor">
-                    <number-flow ref={nf.tempsParatHores} className="temps-parat-hores-valor"></number-flow>
-                    h&nbsp;
-                    <number-flow ref={nf.tempsParatMinuts} className="temps-parat-minuts-valor" digits="2"></number-flow>
-                    min
+                    {formatarHoresMin_(produccio.resumAvui.tempsParatMin || 0)}
                   </div>
                   <div className="etiqueta">{t(idioma, 'kpi_parat')}</div>
                 </div>
