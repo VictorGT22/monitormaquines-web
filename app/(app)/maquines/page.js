@@ -436,7 +436,7 @@ function FitxaContent() {
             </button>
           </div>
 
-          <div className="filtres-historic filtres-produccio-compactes">
+          <div className={'filtres-historic filtres-produccio-compactes filtres-produccio-unificats' + (mode === 'periode' ? ' amb-periode' : '') + (!mostrarReferencia ? ' sense-referencia' : '')}>
             {horariUnic ? <div>
               <label>{t(idioma, 'f_torn')}</label>
               <div className="torns-chips"><span className="torn-chip torn-chip-unic actiu">{t(idioma, 'torn_unic')}</span></div>
@@ -453,6 +453,30 @@ function FitxaContent() {
                 ]} />
               </div>
             )}
+            {mode === 'periode' && produccio?.resum && <>
+              <div>
+                <label>{t(idioma, 'f_any')}</label>
+                <AppSelect ariaLabel={t(idioma, 'f_any')} value={filtreAny} onChange={setFiltreAny} options={[
+                  { value: '', label: t(idioma, 'f_tots') },
+                  ...(produccio.anysDisponibles || []).map((a) => ({ value: a, label: a })),
+                ]} />
+              </div>
+              <div>
+                <label>{t(idioma, 'f_mes')}</label>
+                <AppSelect ariaLabel={t(idioma, 'f_mes')} value={filtreMes} onChange={setFiltreMes} options={[
+                  { value: '', label: t(idioma, 'f_tots') },
+                  ...t(idioma, 'mesos').map((nom, i) => ({ value: i + 1, label: nom })),
+                ]} />
+              </div>
+              <div>
+                <label>{t(idioma, 'f_desde')}</label>
+                <DatePickerInput value={dataIniciPeriode} onChange={setDataIniciPeriode} placeholder="dd/mm/aaaa" />
+              </div>
+              <div>
+                <label>{t(idioma, 'f_finsA')}</label>
+                <DatePickerInput value={dataFiPeriode} onChange={setDataFiPeriode} placeholder="dd/mm/aaaa" />
+              </div>
+            </>}
           </div>
 
           {/* ── AVUI ───────────────────────────────────────────── */}
@@ -511,31 +535,6 @@ function FitxaContent() {
           {/* ── PERIODE ────────────────────────────────────────── */}
           {mode === 'periode' && produccio?.resum && (
             <div id="bloc-periode-total">
-              <div className="filtres-historic filtres-periode-produccio">
-                <div>
-                  <label>{t(idioma, 'f_any')}</label>
-                  <AppSelect ariaLabel={t(idioma, 'f_any')} value={filtreAny} onChange={setFiltreAny} options={[
-                    { value: '', label: t(idioma, 'f_tots') },
-                    ...(produccio.anysDisponibles || []).map((a) => ({ value: a, label: a })),
-                  ]} />
-                </div>
-                <div>
-                  <label>{t(idioma, 'f_mes')}</label>
-                  <AppSelect ariaLabel={t(idioma, 'f_mes')} value={filtreMes} onChange={setFiltreMes} options={[
-                    { value: '', label: t(idioma, 'f_tots') },
-                    ...t(idioma, 'mesos').map((nom, i) => ({ value: i + 1, label: nom })),
-                  ]} />
-                </div>
-                <div>
-                  <label>{t(idioma, 'f_desde')}</label>
-                  <DatePickerInput value={dataIniciPeriode} onChange={setDataIniciPeriode} placeholder="dd/mm/aaaa" />
-                </div>
-                <div>
-                  <label>{t(idioma, 'f_finsA')}</label>
-                  <DatePickerInput value={dataFiPeriode} onChange={setDataFiPeriode} placeholder="dd/mm/aaaa" />
-                </div>
-              </div>
-
               {filtreTorn.length > 0 && (
                 <div className="kpi-row resum-torns">
                   {filtreTorn.map((torn) => {
