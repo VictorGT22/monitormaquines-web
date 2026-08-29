@@ -1911,14 +1911,25 @@
   #panell-produccio .filtres-produccio-compactes label { color:#a9b4c2; font-size:9px; font-weight:650; }
   #panell-produccio .filtres-produccio-compactes select { min-height:38px; padding:0 34px 0 11px; border:1px solid rgba(255,255,255,.11); border-radius:10px; background:#151e27; color:#e1e6ec; font-family:var(--font-body); font-size:11px; color-scheme:dark; }
   #panell-produccio .filtres-produccio-compactes select:focus { outline:0; border-color:rgba(255,255,255,.45); box-shadow:0 0 0 3px rgba(255,255,255,.05); }
-  #panell-produccio .filtres-produccio-unificats { display:grid; grid-template-columns:max-content minmax(116px,1fr); align-items:end; width:100%; }
-  #panell-produccio .filtres-produccio-unificats.amb-periode { grid-template-columns:max-content minmax(116px,1fr) 92px 112px 168px 168px; }
-  #panell-produccio .filtres-produccio-unificats.amb-periode.sense-referencia { grid-template-columns:max-content 92px 112px minmax(150px,1fr) minmax(150px,1fr); }
-  #panell-produccio .filtres-produccio-unificats > div { min-width:0; }
-  #panell-produccio .filtres-produccio-unificats .app-select,
-  #panell-produccio .filtres-produccio-unificats .date-input { width:100%; }
-  #panell-produccio .filtres-produccio-unificats .app-select-trigger,
-  #panell-produccio .filtres-produccio-unificats .date-input { min-height:40px; border-color:rgba(255,255,255,.11); border-radius:10px; background-color:#151e27; color:#e8edf2; font:500 12px var(--font-body); }
+  #panell-produccio .filtres-periode-produccio { display:grid; grid-template-columns:92px 112px 168px 168px; align-items:end; width:max-content; max-width:100%; }
+  #panell-produccio .filtres-periode-produccio > div { min-width:0; }
+  #panell-produccio .filtres-produccio-compactes .app-select-trigger,
+  #panell-produccio .filtres-produccio-compactes .filtre-torn-btn,
+  #panell-produccio .filtres-produccio-compactes .torn-chip-unic,
+  #panell-produccio .filtres-periode-produccio .app-select-trigger,
+  #panell-produccio .filtres-periode-produccio .date-input {
+    min-height:40px; border:1px solid rgba(255,255,255,.11); border-radius:10px;
+    background:#151e27; color:#e8edf2; font:500 12px var(--font-body); box-shadow:none;
+  }
+  #panell-produccio .filtres-produccio-compactes .filtre-torn-btn { min-width:58px; padding:0 12px; }
+  #panell-produccio .filtres-produccio-compactes .filtre-torn-btn::before,
+  #panell-produccio .filtres-produccio-compactes .filtre-torn-btn::after { display:none; }
+  #panell-produccio .filtres-produccio-compactes .filtre-torn-btn.actiu,
+  #panell-produccio .filtres-produccio-compactes .filtre-torn-btn.actiu[data-torn] {
+    padding-left:12px; border-color:rgba(255,255,255,.34); background:#243447; color:#fff; font-weight:600;
+  }
+  #panell-produccio .filtres-periode-produccio .app-select,
+  #panell-produccio .filtres-periode-produccio .date-input { width:100%; }
   #panell-cronologia .cronologia-llegenda { gap:15px; margin-bottom:12px; }
   #panell-cronologia .cronologia-chip { color:#aeb8c5; font-size:10px; font-weight:550; }
   #panell-cronologia .cronologia-chip i { width:9px; height:9px; border-radius:3px; }
@@ -2163,18 +2174,23 @@
     }
     #panell-produccio .kpi-ritme .ritme-fletxa { top:10px; right:11px; }
     #panell-produccio .filtres-produccio-compactes,
-    #panell-produccio .filtres-produccio-unificats,
-    #panell-produccio .filtres-produccio-unificats.amb-periode {
+    #panell-produccio .filtres-periode-produccio {
       display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
       align-items:end; gap:10px; width:100%;
     }
     #panell-produccio .filtres-produccio-compactes > div,
-    #panell-produccio .filtres-produccio-unificats > div { width:auto; min-width:0; }
+    #panell-produccio .filtres-periode-produccio > div { width:auto; min-width:0; }
+    #panell-produccio .filtres-produccio-compactes > div { grid-column:1/-1; }
     #panell-produccio .filtres-produccio-compactes select,
-    #panell-produccio .filtres-produccio-unificats select,
-    #panell-produccio .filtres-produccio-unificats input { width:100%; min-width:0; box-sizing:border-box; }
+    #panell-produccio .filtres-periode-produccio select,
+    #panell-produccio .filtres-periode-produccio input { width:100%; min-width:0; box-sizing:border-box; }
     #panell-produccio .filtres-produccio-compactes .torns-chips { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; }
     #panell-produccio .filtres-produccio-compactes .torn-chip { min-width:0; padding-left:5px; padding-right:5px; text-align:center; }
+    #panell-produccio .filtres-produccio-compactes .filtres-torn {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(0,1fr)); gap:6px; width:100%;
+    }
+    #panell-produccio .filtres-produccio-compactes .filtre-torn-btn { min-width:0; width:100%; }
+    #fitxa-view .app-select-menu { left:0; right:0; width:100%; min-width:0; max-width:100%; }
 
     /* Exemple de taula adaptativa: una parada es llegeix com una fitxa. */
     #panell-parades > .taula-scroll { display:none; }
