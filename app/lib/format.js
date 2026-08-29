@@ -35,6 +35,22 @@ export function formatarDurada_(min, seg) {
   return (seg || 0) + 's';
 }
 
+// Mateix criteri d'"avui" que ja fa servir el backend (avuiISO a
+// app-maquines.routes.js): data ISO en UTC, no la data local del navegador —
+// cal mantenir el mateix criteri arreu perquè "avui" vulgui dir la mateixa
+// data a tots els filtres de la fitxa (Producció, Paradas, Alarmes...).
+export function avuiISO_() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Durada en minuts entre dos ISO — null si encara no ha acabat (fi buit).
+export function calcularDuradaMin_(iniciIso, fiIso) {
+  if (!iniciIso || !fiIso) return null;
+  const ms = new Date(fiIso) - new Date(iniciIso);
+  if (!(ms > 0)) return null;
+  return { min: Math.round(ms / 60000), seg: Math.round(ms / 1000) };
+}
+
 export function formatEuros_(n) {
   return (Number(n) || 0).toLocaleString('ca-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 }

@@ -75,6 +75,30 @@ export function AuthProvider({ children }) {
     setAppError('');
   }, [token]);
 
+  useEffect(() => {
+    if (!token) return;
+    let actiu = true;
+    function enviarPresencia() {
+      if (document.visibilityState === 'hidden') return;
+      api.actualitzarPresencia(token).catch((err) => {
+        if (actiu && err?.status === 401) logout();
+      });
+    }
+    function enTornarVisible() {
+      if (document.visibilityState === 'visible') enviarPresencia();
+    }
+    enviarPresencia();
+    const interval = window.setInterval(enviarPresencia, 30000);
+    document.addEventListener('visibilitychange', enTornarVisible);
+    window.addEventListener('focus', enviarPresencia);
+    return () => {
+      actiu = false;
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', enTornarVisible);
+      window.removeEventListener('focus', enviarPresencia);
+    };
+  }, [token, logout]);
+
   function emailDesat() {
     try { return localStorage.getItem(CLAU_EMAIL) || ''; } catch (e) { return ''; }
   }

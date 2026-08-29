@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import * as api from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 import { useMaquines } from '../lib/useMaquines';
+import { useConsumXarxa } from '../lib/useConsumXarxa';
 import { t } from '../lib/i18n';
 import { IconaWifiOff } from '../lib/icons';
 import MaquinaCard from '../components/MaquinaCard';
@@ -11,11 +10,11 @@ import MaquinaCard from '../components/MaquinaCard';
 const ESTATS_CHIP = ['marxa', 'parada', 'alarma', 'incomunicada', 'desactivada'];
 
 export default function HomePage() {
-  const { token, sessio, errorSessio } = useAuth();
+  const { sessio } = useAuth();
   const esAdmin = sessio?.rol === 'admin';
   const idioma = sessio?.idioma || 'ca';
   const {
-    maquines, carregant, comptesEstat,
+    maquines, carregant, comptesEstat, filtresAdmin,
     filtreEstat, setFiltreEstat,
     filtreClient, setFiltreClient,
     filtreAny, setFiltreAny,
@@ -23,13 +22,7 @@ export default function HomePage() {
     alertaCaigudaMultiple,
   } = useMaquines();
 
-  const [filtresAdmin, setFiltresAdmin] = useState(null); // { clients, anys }
-
-  // Port de carregarFiltresAdmin_(): només un cop per sessió.
-  useEffect(() => {
-    if (!esAdmin || !token || filtresAdmin) return;
-    api.getFiltresAdmin(token).then(setFiltresAdmin).catch(errorSessio);
-  }, [esAdmin, token, filtresAdmin, errorSessio]);
+  const consum = useConsumXarxa();
 
   return (
     <div id="home-view">
@@ -39,6 +32,11 @@ export default function HomePage() {
           {alertaCaigudaMultiple.join(', ')}
         </div>
       ) : null}
+
+      <div id="consum-xarxa-chip" title={`${consum.peticions} peticions\n\n${consum.detallText}`}>
+        <span>Consum d’aquesta sessió</span>
+        <strong>{consum.text}</strong>
+      </div>
 
       {esAdmin && (
         <div id="admin-filtres" className="filtres-historic">

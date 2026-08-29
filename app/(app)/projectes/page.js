@@ -1,11 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import * as api from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 import { t } from '../../lib/i18n';
 import { IconaCabal, IconaConsum, IconaReferencia } from '../../lib/icons';
 import DatePickerInput from '../../components/DatePickerInput';
+import { useProjectesErp } from '../../lib/useProjectesErp';
 
 const TOTS_TORNS = ['Matí', 'Tarda', 'Nit'];
 const TORNS_IDIOMA = {
@@ -14,32 +16,17 @@ const TORNS_IDIOMA = {
   en: { 'Matí': 'Morning', 'Tarda': 'Afternoon', 'Nit': 'Night' },
 };
 export default function ProjectesPage() {
+  const router = useRouter();
   const { token, sessio, errorSessio } = useAuth();
   const idioma = sessio?.idioma || 'ca';
   const tornsNoms = TORNS_IDIOMA[idioma] || TORNS_IDIOMA.ca;
 
-  const [projectes, setProjectes] = useState([]);
-  const [carregant, setCarregant] = useState(true);
+  // Llista viu al Provider muntat al layout (useProjectesErp) — es carrega
+  // un sol cop per sessió, no cada vegada que es visita aquesta pàgina.
+  const { projectes, carregantProjectes: carregant, actualitzarProjecte: actualitzar } = useProjectesErp();
   const [filtreEstat, setFiltreEstat] = useState('actius');
   const [filtreText, setFiltreText] = useState('');
   const [preusNou, setPreusNou] = useState({});
-
-  const carregar = useCallback(async () => {
-    if (!token) return;
-    try {
-      setProjectes(await api.getProjectesErp(token));
-    } catch (err) {
-      errorSessio(err);
-    } finally {
-      setCarregant(false);
-    }
-  }, [token, errorSessio]);
-
-  useEffect(() => { carregar(); }, [carregar]);
-
-  function actualitzar(id, camps) {
-    setProjectes(prev => prev.map(p => p.id !== id ? p : { ...p, ...camps }));
-  }
 
   async function activar(id) {
     const item = projectes.find(p => p.id === id);
@@ -48,7 +35,6 @@ export default function ProjectesPage() {
     actualitzar(id, { nexaControlActiu: true, nexaControlSuspes: false, preuPlus: preu });
     try {
       await api.activarNexaControl(token, id, item.descripcio, item.client, preu);
-      carregar();
     } catch (err) {
       actualitzar(id, { nexaControlActiu: false });
       errorSessio(err);
@@ -59,7 +45,6 @@ export default function ProjectesPage() {
     actualitzar(id, { nexaControlSuspes: !actiu });
     try {
       await api.canviarActivacioProjecte(token, id, actiu);
-      carregar();
     } catch (err) {
       actualitzar(id, { nexaControlSuspes: actiu });
       errorSessio(err);
@@ -70,7 +55,6 @@ export default function ProjectesPage() {
     actualitzar(id, { visibleClient: visible });
     try {
       await api.canviarVisibilitatClient(token, id, visible);
-      carregar();
     } catch (err) {
       actualitzar(id, { visibleClient: !visible });
       errorSessio(err);
@@ -81,7 +65,6 @@ export default function ProjectesPage() {
     actualitzar(id, { mostrarReferencia: mostrar });
     try {
       await api.canviarMostrarReferencia(token, id, mostrar);
-      carregar();
     } catch (err) {
       actualitzar(id, { mostrarReferencia: !mostrar });
       errorSessio(err);
@@ -92,7 +75,6 @@ export default function ProjectesPage() {
     actualitzar(id, { controlCabal: actiu });
     try {
       await api.canviarControlCabal(token, id, actiu);
-      carregar();
     } catch (err) {
       actualitzar(id, { controlCabal: !actiu });
       errorSessio(err);
@@ -103,7 +85,6 @@ export default function ProjectesPage() {
     actualitzar(id, { controlConsumElectric: actiu });
     try {
       await api.canviarControlConsumElectric(token, id, actiu);
-      carregar();
     } catch (err) {
       actualitzar(id, { controlConsumElectric: !actiu });
       errorSessio(err);
@@ -159,9 +140,10 @@ export default function ProjectesPage() {
       </div>
 
       <div className="filtres-historic">
-        <div style={{ flex: 1, minWidth: 160 }}>
+        <div className="projectes-cerca">
           <label>Cercar</label>
           <input
+            className="projectes-cerca-input"
             type="text"
             placeholder="Cercar per projecte o client..."
             value={filtreText}
@@ -179,7 +161,17 @@ export default function ProjectesPage() {
           <div className="empty-state">{t(idioma, 'buit_dades')}</div>
         ) : (
           projectesFiltrats.map(p => (
-            <div key={p.id} className={'projecte-card' + (p.nexaControlSuspes ? ' suspes' : '')}>
+            <div key={p.id}
+              className={'projecte-card' + (p.nexaControlSuspes ? ' suspes' : '') + (p.nexaControlActiu ? ' projecte-card-configurable' : '')}
+              role={p.nexaControlActiu ? 'link' : undefined}
+              tabIndex={p.nexaControlActiu ? 0 : undefined}
+              onClick={(e) => {
+                if (p.nexaControlActiu && !e.target.closest('button,input')) router.push(`/projectes/configuracio?id=${encodeURIComponent(p.id)}`);
+              }}
+              onKeyDown={(e) => {
+                if (p.nexaControlActiu && (e.key === 'Enter' || e.key === ' ')) router.push(`/projectes/configuracio?id=${encodeURIComponent(p.id)}`);
+              }}
+            >
               {p.nexaControlSuspes
                 ? <span className="chip-suspes">Desactivat</span>
                 : p.nexaControlActiu
@@ -220,7 +212,9 @@ export default function ProjectesPage() {
                   <div className="projecte-data">
                     <label>Torns</label>
                     <div className="torns-chips">
-                      {TOTS_TORNS.map(torn => (
+                      {p.modeTorns === 'unic' ? (
+                        <span className="torn-chip torn-chip-unic actiu">{t(idioma, 'torn_unic')}</span>
+                      ) : TOTS_TORNS.map(torn => (
                         <button key={torn} type="button"
                           className={'torn-chip' + (p.torns.includes(torn) ? ' actiu' : '')}
                           onClick={() => canviarTorns(p.id, torn)}
@@ -260,6 +254,12 @@ export default function ProjectesPage() {
                     >
                       {p.visibleClient === false ? 'Fer visible al client' : 'Amagar al client (posta en marxa)'}
                     </button>
+                  </div>
+                  <div className="projecte-card-action">
+                    <span>Configurar projecte</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="m9 5 7 7-7 7" />
+                    </svg>
                   </div>
                 </div>
               ) : (

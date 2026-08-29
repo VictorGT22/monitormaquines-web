@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useImperativeHandle, useRef, forwardRef } from 'react';
-import { formatarData_ } from '../lib/format';
+import { formatarData_, calcularDuradaMin_ } from '../lib/format';
 import { DICC } from '../lib/i18n';
 
 const COLORS_TORN = { Matí: '#f6c453', Tarda: '#4da3ff', Nit: '#b582f8' };
@@ -10,10 +10,21 @@ const COLORS_TORN = { Matí: '#f6c453', Tarda: '#4da3ff', Nit: '#b582f8' };
 // dia amb incidències. Retorna els dies agregats via onDiesCalculats perquè
 // la pàgina pugui fer clic a una fila de la taula i saltar al dia correcte
 // (mostrarTooltipHistoric_/realçarSegmentCronologia_).
-const GraficHistoric = forwardRef(function GraficHistoric({ historic, idioma, onDiesCalculats }, ref) {
+//
+// El tooltip en hover llista TOTES les alarmes d'aquell dia (no només el
+// recompte per torn) i el clic selecciona la de durada més llarga —
+// diesAmbItemsRef es llegeix des dels callbacks de Chart.js, que només es
+// fixen un cop en crear el gràfic (les actualitzacions posteriors només
+// reassignen "data", no "options"): llegir-lo via ref en lloc de capturar
+// "dies" per closure evita que quedin apuntant a dades vella.
+const GraficHistoric = forwardRef(function GraficHistoric({ historic, idioma, onDiesCalculats, onSeleccionarAlarma }, ref) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
   const tooltipTimeoutRef = useRef(null);
+  const signaturaAnteriorRef = useRef(null);
+  const diesAmbItemsRef = useRef([]);
+  const onSeleccionarAlarmaRef = useRef(onSeleccionarAlarma);
+  useEffect(() => { onSeleccionarAlarmaRef.current = onSeleccionarAlarma; }, [onSeleccionarAlarma]);
 
   useImperativeHandle(ref, () => ({
     mostrarTooltip(index) {
@@ -38,13 +49,27 @@ const GraficHistoric = forwardRef(function GraficHistoric({ historic, idioma, on
     const perDiaMap = {};
     (historic || []).forEach((i) => {
       const key = i.timestampInici.slice(0, 10);
-      if (!perDiaMap[key]) perDiaMap[key] = { data: i.timestampInici };
+      if (!perDiaMap[key]) perDiaMap[key] = { data: i.timestampInici, items: [] };
+      const durada = calcularDuradaMin_(i.timestampInici, i.timestampFi);
+      perDiaMap[key].items.push({ ...i, duradaMin: durada?.min ?? null, duradaSeg: durada?.seg ?? null });
       (i.torns && i.torns.length ? i.torns : [i.torn]).forEach((t) => {
         perDiaMap[key][t] = (perDiaMap[key][t] || 0) + 1;
       });
     });
     const dies = Object.values(perDiaMap).sort((a, b) => new Date(a.data) - new Date(b.data));
-    onDiesCalculats?.(dies);
+    diesAmbItemsRef.current = dies;
+
+    // historic arriba com a array nou en cada render del pare (fitxa?.x ||
+    // []) encara que el contingut no hagi canviat — sense aquesta guarda,
+    // onDiesCalculats dispara setState al pare -> nou render -> nou array ->
+    // aquest efecte torna a disparar-se -> bucle infinit (Maximum update
+    // depth exceeded), agreujat quan el refresc SSE refà fitxa sovint.
+    const signatura = dies.length + '|' + (dies[0]?.data || '') + '|' + (dies[dies.length - 1]?.data || '');
+    if (signatura !== signaturaAnteriorRef.current) {
+      signaturaAnteriorRef.current = signatura;
+      onDiesCalculats?.(dies);
+    }
+
     const etiquetes = dies.map((d) => formatarData_(d.data));
     const datasets = torns.map((torn) => ({
       label: DICC[idioma].torns[torn],
@@ -64,7 +89,23 @@ const GraficHistoric = forwardRef(function GraficHistoric({ historic, idioma, on
       data: { labels: etiquetes, datasets },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: true, position: 'bottom', labels: { color: '#8a95a5', boxWidth: 12, boxHeight: 12 } } },
+        interaction: { mode: 'index', intersect: false },
+        onClick: (_event, elements) => {
+          if (!elements.length) return;
+          const dia = diesAmbItemsRef.current[elements[0].index];
+          const items = dia?.items || [];
+          if (!items.length) return;
+          // La de durada més llarga: la que ha tardat més a resoldre's.
+          const seleccionada = items.reduce((max, it) =>
+            (it.duradaMin ?? -1) > (max.duradaMin ?? -1) ? it : max, items[0]);
+          onSeleccionarAlarmaRef.current?.(seleccionada);
+        },
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { color: '#8a95a5', boxWidth: 12, boxHeight: 12 } },
+          // Només el recompte per torn (línia per defecte de Chart.js,
+          // "Matí: 2" etc.) — sense llistar les alarmes una a una.
+          tooltip: { mode: 'index', intersect: false },
+        },
         scales: {
           x: { stacked: true, ticks: { color: '#8a95a5' }, grid: { color: '#2c343f' } },
           y: { stacked: true, ticks: { color: '#8a95a5', precision: 0 }, grid: { color: '#2c343f' }, beginAtZero: true },

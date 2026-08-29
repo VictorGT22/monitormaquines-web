@@ -26,6 +26,21 @@ export default function MaquinaCard({ maquina: m }) {
 
   useEffect(() => {
     const node = numFlowRef.current;
+    if (!node) return;
+    // Durada més curta que el cicle de refresc perquè l'animació sempre
+    // acabi abans del proper valor — veure comentari equivalent a
+    // maquines/page.js (useNumberFlowAvui).
+    const timing = { duration: 450, easing: 'ease-out' };
+    node.transformTiming = timing;
+    node.spinTiming = timing;
+    node.opacityTiming = { duration: 300, easing: 'ease-out' };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // un sol cop en muntar — sense l'array buit, reassignar-ho a cada
+  // render (p.ex. cada refresc de la llista) reinicialitzava number-flow i
+  // els valors deixaven de pintar-se.
+
+  useEffect(() => {
+    const node = numFlowRef.current;
     if (!node || !clicable) return;
     const anterior = valorsPecesAnteriors[m.machineId];
     node.update?.(anterior !== undefined ? anterior : m.pecesBonesAvui);
@@ -77,7 +92,6 @@ export default function MaquinaCard({ maquina: m }) {
           <div className="peces-avui-row">
             <span className="torn-punt" style={{ background: COLORS_TORN[m.tornActual] || 'var(--text-muted)' }} />
             <IconaPeces />
-            {/* eslint-disable-next-line react/no-unknown-property */}
             <number-flow ref={numFlowRef} class="peces-avui-valor"></number-flow>
           </div>
         )}

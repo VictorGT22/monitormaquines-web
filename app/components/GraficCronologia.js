@@ -53,6 +53,18 @@ function formatMinutsHoraPrecisa(min, ambSegons) {
   return ambSegons ? base + ':' + String(ss).padStart(2,'0') : base;
 }
 
+function formatDuradaCompleta_(minuts) {
+  const total = Math.max(0, Math.round(minuts * 60));
+  const hores = Math.floor(total / 3600);
+  const mins = Math.floor((total % 3600) / 60);
+  const segons = total % 60;
+  const parts = [];
+  if (hores) parts.push(hores + ' h');
+  if (mins) parts.push(mins + ' min');
+  if (segons || !parts.length) parts.push(segons + ' s');
+  return parts.join(' ');
+}
+
 function etiquetaEstat(estat, idioma) {
   if (estat === 'marxa') return t(idioma, 'cronologia_producint');
   if (estat === 'alarma') return t(idioma, 'cronologia_alarma');
@@ -89,23 +101,6 @@ function prepararDies(dies, tornsActius, referencia) {
   }).filter(dia => dia.segments.length > 0);
 }
 
-function kpiText(dia, idioma) {
-  const totals = { marxa: 0, alarma: 0, parada: 0, incomunicada: 0 };
-  (dia.segments || []).forEach(s => {
-    if (totals[s.estat] === undefined) return;
-    totals[s.estat] += typeof s.__minInici === 'number'
-      ? (s.__minFi - s.__minInici) / 60
-      : (new Date(s.fi) - new Date(s.inici)) / 3600000;
-  });
-  const fmt = h => { const m = Math.max(0, Math.round(h * 60)); return Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2,'0') + 'm'; };
-  return [
-    t(idioma,'cronologia_producint') + ': ' + fmt(totals.marxa),
-    t(idioma,'cronologia_alarma') + ': ' + fmt(totals.alarma),
-    t(idioma,'cronologia_parada') + ': ' + fmt(totals.parada),
-    t(idioma,'cronologia_incomunicada') + ': ' + fmt(totals.incomunicada),
-  ].join(' · ');
-}
-
 const GraficCronologia = forwardRef(function GraficCronologia(
   { dies, tornsActius, referencia, idioma, onJumpHistoric, onJumpParades },
   ref
@@ -117,7 +112,16 @@ const GraficCronologia = forwardRef(function GraficCronologia(
   const lupaHoraRef = useRef(null);
   const lupaTramsRef = useRef(null);
   const lupaExtraRef = useRef(null);
+  const lupaDuradaRef = useRef(null);
   const lupaTancamentRef = useRef(null);
+  // Bandera activa mentre dura el resaltat provocat per un clic a una fila
+  // de Paradas/Alarmes. La lupa i el tooltip natiu de Chart.js competeixen
+  // pel mateix hover: el filter del tooltip bloqueja tot tooltip quan la
+  // lupa és visible (per no duplicar informació durant un hover normal).
+  // Sense aquesta bandera, un hover ambient (p.ex. provocat pel scroll cap
+  // al gràfic) podia deixar la lupa oberta just abans de resaltarSegment i
+  // el tooltip del segment clicat quedava silenciosament bloquejat.
+  const resaltatClicRef = useRef(false);
   const [diesProcessats, setDiesProcessats] = useState([]);
 
   useEffect(() => { if (lupaRef.current) lupaRef.current.hidden = true; }, []);
@@ -134,9 +138,19 @@ const GraficCronologia = forwardRef(function GraficCronologia(
       if (index === -1) return;
       const els = chart.data.datasets.map((_, di) => ({ datasetIndex: di, index }));
       const punt = chart.getDatasetMeta(0).data[index];
+      if (lupaRef.current) lupaRef.current.hidden = true;
+      resaltatClicRef.current = true;
       chart.setActiveElements(els);
       chart.tooltip.setActiveElements(els, { x: punt ? punt.x : 0, y: punt ? punt.y : 0 });
       chart.update();
+      // El fade-in del tooltip depèn de l'animation loop de Chart.js
+      // (requestAnimationFrame), que en aquest flux (activat des d'un clic
+      // fora del canvas, no d'un hover real) no sempre arrenca a temps.
+      // Es força l'opacitat i un draw() síncron perquè el tooltip aparegui
+      // sempre, independentment de si l'animador ha arrencat.
+      chart.tooltip.opacity = 1;
+      chart.draw();
+      setTimeout(() => { resaltatClicRef.current = false; }, 1200);
     },
   }));
 
@@ -174,13 +188,14 @@ const GraficCronologia = forwardRef(function GraficCronologia(
       const dur = raw.x[1] - raw.x[0];
       if (lupaStatRef.current) lupaStatRef.current.textContent = etiquetaEstat(raw.estat, idioma);
       if (lupaHoraRef.current) lupaHoraRef.current.textContent =
-        formatMinutsHoraPrecisa(raw.x[0], true) + ' – ' + formatMinutsHoraPrecisa(raw.x[1], true) +
-        ' · ' + t(idioma, 'cronologia_durada') + ': ' + Math.max(1, Math.round(dur * 60)) + ' s';
+        formatMinutsHoraPrecisa(raw.x[0], true) + ' – ' + formatMinutsHoraPrecisa(raw.x[1], true);
       const ex = [];
       if (raw.referencies?.length) ex.push(t(idioma,'f_referencia') + ': ' + raw.referencies.join(', '));
       if (raw.alarmes?.length) ex.push(...raw.alarmes.map(a => a.codi + ' — ' + a.missatge));
       if (raw.parades?.length) ex.push(...raw.parades.map(p => p.motiu));
-      if (lupaExtraRef.current) lupaExtraRef.current.textContent = ex.join(' · ');
+      if (lupaExtraRef.current) lupaExtraRef.current.textContent = 'Causa: ' + (ex.join(' · ') || '—');
+      if (lupaDuradaRef.current) lupaDuradaRef.current.textContent =
+        t(idioma, 'cronologia_durada') + ': ' + formatDuradaCompleta_(dur);
     }
 
     function obrirDetall(raw) {
@@ -190,7 +205,33 @@ const GraficCronologia = forwardRef(function GraficCronologia(
       else if (raw.estat === 'parada') onJumpParades?.(raw.parades?.[0]?.timestampInici);
     }
 
+    function posicionarLupa(el, event) {
+      if (!lupa || !el) return;
+      const wrap = canvas.parentElement;
+      const x = Math.max(132, Math.min((wrap?.clientWidth || 400) - 132, canvas.offsetLeft + event.x));
+      const ALCADA_LUPA = 264;
+      const puntViewportY = canvas.getBoundingClientRect().top + el.y;
+      const limitSuperior = document.getElementById('fitxa-scroll')?.getBoundingClientRect().top ?? 0;
+      const limitInferior = document.getElementById('fitxa-scroll')?.getBoundingClientRect().bottom ?? window.innerHeight;
+      const capdamuntSuficient = (puntViewportY - 26 - ALCADA_LUPA) >= limitSuperior;
+      const avallSuficient = (puntViewportY + 26 + ALCADA_LUPA) <= limitInferior;
+      lupa.style.left = x + 'px';
+      if (capdamuntSuficient || !avallSuficient) {
+        lupa.classList.add('a-sobre');
+        lupa.classList.remove('a-sota');
+        lupa.style.top = (canvas.offsetTop + el.y - 26) + 'px';
+        lupa.style.transform = 'translate(-50%, -100%)';
+      } else {
+        lupa.classList.add('a-sota');
+        lupa.classList.remove('a-sobre');
+        lupa.style.top = (canvas.offsetTop + el.y + 26) + 'px';
+        lupa.style.transform = 'translate(-50%, 0%)';
+      }
+      lupa.hidden = false;
+    }
+
     function mostrarLupa(event, actius, chart) {
+      if (resaltatClicRef.current) return;
       if (!actius.length) { programarTancamentLupa(); return; }
       const actiu = actius[0];
       const rawProper = chart.data.datasets[actiu.datasetIndex].data[actiu.index];
@@ -199,8 +240,24 @@ const GraficCronologia = forwardRef(function GraficCronologia(
         ['alarma','parada'].includes(chart.data.datasets[directes[0].datasetIndex].data[directes[0].index].estat)
         ? 'pointer' : 'default';
       if (directes.length) {
-        const rawDir = chart.data.datasets[directes[0].datasetIndex].data[directes[0].index];
-        if ((rawDir.x[1] - rawDir.x[0]) >= 4) { programarTancamentLupa(); return; }
+        const directe = directes[0];
+        const rawDir = chart.data.datasets[directe.datasetIndex].data[directe.index];
+        if ((rawDir.x[1] - rawDir.x[0]) >= 4) {
+          cancelLupa();
+          actualitzarLupa(rawDir);
+          const trams = lupaTramsRef.current;
+          if (trams) {
+            trams.innerHTML = '';
+            const barra = document.createElement('span');
+            barra.className = 'cronologia-lupa-tram actiu';
+            barra.style.left = '0';
+            barra.style.width = '100%';
+            barra.style.background = COLORS_ESTAT[rawDir.estat];
+            trams.appendChild(barra);
+          }
+          posicionarLupa(chart.getDatasetMeta(directe.datasetIndex).data[directe.index], event);
+          return;
+        }
       }
       const el = chart.getDatasetMeta(actiu.datasetIndex).data[actiu.index];
       if (Math.abs(event.y - el.y) > Math.max(16, (Number(el.height) || 28) / 2 + 8)) { programarTancamentLupa(); return; }
@@ -243,14 +300,7 @@ const GraficCronologia = forwardRef(function GraficCronologia(
           cursor.style.left = Math.max(0, Math.min(100, (e.clientX-rect.left)/rect.width*100)) + '%';
         };
       }
-      const wrap = canvas.parentElement;
-      const x = Math.max(132, Math.min((wrap?.clientWidth||400)-132, canvas.offsetLeft + event.x));
-      if (lupa) {
-        lupa.style.left = x + 'px';
-        lupa.style.top = (canvas.offsetTop + el.y - 26) + 'px';
-        lupa.style.transform = 'translate(-50%, -100%)';
-        lupa.hidden = false;
-      }
+      posicionarLupa(el, event);
     }
 
     const config = {
@@ -280,7 +330,7 @@ const GraficCronologia = forwardRef(function GraficCronologia(
           legend: { display: false },
           tooltip: {
             mode: 'nearest', intersect: true,
-            filter: c => { if (lupa && !lupa.hidden) return false; return (c.raw.x[1] - c.raw.x[0]) >= 4; },
+            filter: c => { if (resaltatClicRef.current) return true; if (lupa && !lupa.hidden) return false; return (c.raw.x[1] - c.raw.x[0]) >= 4; },
             callbacks: {
               label: c => {
                 const d = c.raw.x[1] - c.raw.x[0];
@@ -341,18 +391,9 @@ const GraficCronologia = forwardRef(function GraficCronologia(
           <div className="cronologia-lupa-hora" ref={lupaHoraRef}></div>
           <div className="cronologia-lupa-trams" ref={lupaTramsRef}></div>
           <div className="cronologia-lupa-extra" ref={lupaExtraRef}></div>
+          <div className="cronologia-lupa-durada" ref={lupaDuradaRef}></div>
         </div>
       </div>
-      {diesProcessats.length > 0 && (
-        <div className="kpi-row">
-          {diesProcessats.map((dia, i) => (
-            <div className="kpi" key={i}>
-              <div className="valor" style={{ fontSize: 13 }}>{kpiText(dia, idioma)}</div>
-              <div className="etiqueta">{dia.etiqueta}</div>
-            </div>
-          ))}
-        </div>
-      )}
       {diesProcessats.length === 0 && dies?.length > 0 && (
         <div className="empty-state">{t(idioma, 'buit_dades')}</div>
       )}

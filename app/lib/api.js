@@ -5,24 +5,38 @@
  * ara ja no es porta): els components criden aquestes funcions directament.
  */
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const peticionsGetEnCurs_ = new Map();
 
 async function apiFetch_(path, { method = 'GET', token, body } = {}) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = 'Bearer ' + token;
-  const resp = await fetch(API_BASE + path, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  const text = await resp.text();
-  let dades;
-  try { dades = text ? JSON.parse(text) : null; } catch (e) { dades = text; }
-  if (!resp.ok) {
-    const err = new Error((dades && dades.error) || ('Error ' + resp.status));
-    err.status = resp.status;
-    throw err;
+  const metode = String(method || 'GET').toUpperCase();
+  const clauGet = metode === 'GET' ? `${token || ''}|${path}` : null;
+  if (clauGet && peticionsGetEnCurs_.has(clauGet)) return peticionsGetEnCurs_.get(clauGet);
+
+  const peticio = (async () => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = 'Bearer ' + token;
+    const resp = await fetch(API_BASE + path, {
+      method: metode,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    const text = await resp.text();
+    let dades;
+    try { dades = text ? JSON.parse(text) : null; } catch (e) { dades = text; }
+    if (!resp.ok) {
+      const err = new Error((dades && dades.error) || ('Error ' + resp.status));
+      err.status = resp.status;
+      throw err;
+    }
+    return dades;
+  })();
+
+  if (clauGet) peticionsGetEnCurs_.set(clauGet, peticio);
+  try {
+    return await peticio;
+  } finally {
+    if (clauGet && peticionsGetEnCurs_.get(clauGet) === peticio) peticionsGetEnCurs_.delete(clauGet);
   }
-  return dades;
 }
 
 function qs_(params) {
@@ -80,6 +94,12 @@ export async function getProduccio(token, machineId, filtres) {
   return apiFetch_(`/maquines/${machineId}/produccio` + qs_(filtres), { token });
 }
 
+// Refresc en viu (SSE) de la Fitxa: només estatActual + incidenciesActives +
+// resumAvui — mai la fitxa/producció senceres, que ja estan en cache local.
+export async function getEstatViuMaquina(token, machineId, referencia, torns) {
+  return apiFetch_(`/maquines/${machineId}/estat-viu` + qs_({ referencia, torns }), { token });
+}
+
 export async function getDetallMaquina(token, machineId, dataInici, dataFi, filtres) {
   const [fitxa, produccio] = await Promise.all([
     apiFetch_(`/maquines/${machineId}/fitxa` + qs_({ dataInici, dataFi }), { token }),
@@ -96,9 +116,11 @@ export async function getFitxesMaquinesBulk(token, filtres) {
 }
 
 // Versió barata per màquina (sense recalcular fitxa/produccio sencers), per
-// decidir al client quines màquines cal refrescar de veritat.
-export async function getFitxesMaquinesVersions(token) {
-  return apiFetch_('/maquines-fitxes-versions', { token });
+// decidir al client quines màquines cal refrescar de veritat. Sense
+// machineIds, respon amb TOTES les visibles — passar-lo quan només interessa
+// un subconjunt (p.ex. les que un avís SSE ha marcat com canviades).
+export async function getFitxesMaquinesVersions(token, filtres) {
+  return apiFetch_('/maquines-fitxes-versions' + qs_(filtres || {}), { token });
 }
 
 export async function getConsums(token, machineId, tipus, dataInici, dataFi) {
@@ -111,6 +133,23 @@ export async function getCronologia(token, machineId, data) {
 
 export async function getCronologiaRang(token, machineId, dataInici, dataFi) {
   return apiFetch_(`/maquines/${machineId}/cronologia-rang` + qs_({ dataInici, dataFi }), { token });
+}
+
+// ── Manteniment ────────────────────────────────────────────────────────
+export async function getManteniment(token, machineId) {
+  return apiFetch_(`/maquines/${machineId}/manteniment`, { token });
+}
+export async function crearTascaManteniment(token, machineId, dades) {
+  return apiFetch_(`/maquines/${machineId}/manteniment`, { method: 'POST', token, body: dades });
+}
+export async function editarTascaManteniment(token, machineId, taskId, dades) {
+  return apiFetch_(`/maquines/${machineId}/manteniment/${taskId}`, { method: 'PATCH', token, body: dades });
+}
+export async function marcarTascaFetaAvui(token, machineId, taskId) {
+  return apiFetch_(`/maquines/${machineId}/manteniment/${taskId}/feta`, { method: 'PATCH', token });
+}
+export async function eliminarTascaManteniment(token, machineId, taskId) {
+  return apiFetch_(`/maquines/${machineId}/manteniment/${taskId}`, { method: 'DELETE', token });
 }
 
 export async function getDispositiusLog(token) {
@@ -161,6 +200,9 @@ export async function canviarControlConsumElectric(token, projecteId, actiu) {
 export async function canviarTornsProjecte(token, projecteId, torns) {
   return apiFetch_(`/projectes-erp/${projecteId}/torns`, { method: 'PATCH', token, body: { torns } });
 }
+export async function actualitzarConfiguracioProjecte(token, projecteId, camps) {
+  return apiFetch_(`/projectes-erp/${projecteId}/configuracio`, { method: 'PATCH', token, body: camps });
+}
 export async function setIdiomaOverride(token, client, idioma) {
   return apiFetch_('/clients-nexa/idioma', { method: 'PATCH', token, body: { client, idioma } });
 }
@@ -169,4 +211,13 @@ export async function getClientsFacturacio(token) {
 }
 export async function actualitzarPreuBase(token, client, preuBase) {
   return apiFetch_('/clients-nexa/preu-base', { method: 'PATCH', token, body: { client, preuBase } });
+}
+export async function actualitzarPlaClient(token, tenantId, pla) {
+  return apiFetch_(`/clients/${encodeURIComponent(tenantId)}/pla`, { method: 'PATCH', token, body: { pla } });
+}
+export async function getUsuarisClient(token, tenantId) {
+  return apiFetch_(`/clients/${encodeURIComponent(tenantId)}/usuaris`, { token });
+}
+export async function guardarUsuariClient(token, tenantId, dades) {
+  return apiFetch_(`/clients/${encodeURIComponent(tenantId)}/usuaris`, { method: 'POST', token, body: dades });
 }

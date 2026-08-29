@@ -87,7 +87,7 @@ export function KpisConsums({ consums, preus, idioma }) {
           ? (perPeca * preu).toFixed(3) + ' € / ' + t(idioma, 'mitjana_peca')
           : t(idioma, tipus === 'electric' ? 'consum_electric' : 'consum_aire');
         return (
-          <div className="kpi" key={tipus}>
+          <div className={'kpi consum-kpi consum-kpi-' + tipus} key={tipus}>
             <div className="valor">{valor}</div>
             <div className="etiqueta">{sota}</div>
           </div>
