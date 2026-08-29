@@ -2096,7 +2096,10 @@
     .client-config-view .plan-card > strong { font-size:22px; }
     .client-config-view .plan-description { margin-bottom:12px; }
     .client-config-view .plan-features { gap:7px; margin-bottom:15px; }
-    .client-config-view .plan-select-cta { min-height:39px; margin-top:0; }
+    .client-config-view .plan-select-cta {
+      width:100%; min-height:48px; margin-top:0; padding:0 16px;
+      box-sizing:border-box; border-radius:12px; font-size:12px;
+    }
     .client-config-view .client-users-section { padding:24px 0 15px; }
     .client-config-view .client-users-table { width:100%; max-width:100%; margin-top:13px; overflow-x:auto; }
     .client-config-view .client-users-table table { min-width:560px; }
