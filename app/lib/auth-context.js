@@ -40,6 +40,19 @@ export function AuthProvider({ children }) {
   // 'comprovant' evita un flash de la vista de login mentre es valida un
   // token ja desat — 'llest' vol dir "ja sabem si hi ha sessió o no".
   const [estatSessio, setEstatSessio] = useState('comprovant');
+  const [esAndroid, setEsAndroid] = useState(false);
+  const [tempsMinimCargaComplet, setTempsMinimCargaComplet] = useState(false);
+
+  // El WebView d'Android necessita una transició pròpia mentre hidrata React
+  // i comprova la sessió. La mantenim almenys 900 ms perquè no sigui un flaix
+  // imperceptible quan localStorage o l'API responen de seguida.
+  useEffect(() => {
+    const android = /Android/i.test(navigator.userAgent || '');
+    setEsAndroid(android);
+    if (!android) { setTempsMinimCargaComplet(true); return; }
+    const timer = window.setTimeout(() => setTempsMinimCargaComplet(true), 900);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     let desat = null;
@@ -114,7 +127,19 @@ export function AuthProvider({ children }) {
   }, [logout]);
 
   const value = { token, sessio, estatSessio, login, logout, emailDesat, appError, setAppError, errorSessio };
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const mostrarCargaAndroid = esAndroid && (estatSessio === 'comprovant' || !tempsMinimCargaComplet);
+  return (
+    <AuthContext.Provider value={value}>
+      {mostrarCargaAndroid ? (
+        <div id="loading-view" role="status" aria-label="Carregant">
+          <div className="loading-logo-circle">
+            <img src="https://i.imgur.com/9mcC7UG.png" alt="NEXA" />
+          </div>
+        </div>
+      ) : null}
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

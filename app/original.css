@@ -197,6 +197,37 @@
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* ── Login ─────────────────────────────────────────── */
+  #loading-view {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    overflow: hidden;
+    background:
+      radial-gradient(60% 50% at 15% 20%, rgba(77,163,255,.28) 0%, transparent 60%),
+      radial-gradient(55% 45% at 85% 15%, rgba(80,140,255,.22) 0%, transparent 65%),
+      radial-gradient(70% 60% at 50% 100%, rgba(23,52,93,.65) 0%, transparent 70%),
+      linear-gradient(165deg, #0a1a30 0%, #123058 55%, #1c3f6e 100%);
+    background-size: 260% 260%, 260% 260%, 260% 260%, 100% 100%;
+    animation: loginBgDrift 10s linear infinite;
+  }
+  .loading-logo-circle {
+    width: 148px;
+    height: 148px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid rgba(255,255,255,.9);
+    box-shadow: 0 14px 40px rgba(0,0,0,.42), 0 0 0 8px rgba(77,163,255,.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .loading-logo-circle img { width: 104px; height: 104px; object-fit: contain; }
+
   #login-view {
     min-height: 100vh;
     display: flex;
@@ -219,7 +250,7 @@
     100% { background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
   }
   @media (prefers-reduced-motion: reduce) {
-    #login-view { animation: none; }
+    #login-view, #loading-view { animation: none; }
   }
   .login-box {
     position: relative;
